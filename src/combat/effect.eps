@@ -1,0 +1,71 @@
+import combat.system as cs;
+import combat.action as cAct;
+import helpers.fx;
+import helpers.location as loc;
+import customText3 as ct;
+import combat.turnBar as tB;
+import combat.cType;
+import combat.formula as cF;
+import item.weapon;
+import tkyo;
+
+var timer;
+function randomPunchSound() {
+    const r = fx.Rand(33);
+    if(r <= 10) ct.playSoundP(ct.cp, "punch1");
+    else if(r <= 21) ct.playSoundP(ct.cp, "punch2");
+    else ct.playSoundP(ct.cp, "punch3");
+}
+function finishAction() {
+    tB.Speed[cs.executingAction] = 0;
+    cAct.actionInit(cs.executingAction);
+    cs.finishExecution();
+}
+var n;
+function main() {
+    if(timer == 0) {
+        n = cs.executingAction;
+        cs.TransEPD(n);
+        loc.SetLocEPD($L("t0"), cs.EPDs[n] + 0x28 / 4);
+        fx.cView("t0");
+    }
+    cAct.issueWaitAll();
+    EUDSwitch(cAct.action[n]);
+    EUDSwitchCase()(cType.action("이동"));
+        fx.DisplayR(ct.cp, ct.color(n%8), ct.str(cs.Names[n]), "\x04", ct.str(cs.Josa_IGA[n]), " 이동을 마쳤습니다.");
+        finishAction();
+        tB.Speed[n] = 47652;
+        cs.moveOpportunity[n] = 0;
+        break;
+    EUDSwitchCase()(cType.action("공격"));  // Attack (Punch)
+        fx.DisplayR(ct.cp, ct.color(n%8), ct.str(cs.Names[n]), "\x04의 공격!");
+        EUDSwitch(weapon.Weapons[n]);
+        EUDSwitchCase()(0);  // 맨손
+            randomPunchSound();
+            tkyo.ZergBloodLarge($L("t1") + n + 1);
+            cF.inflictDamage(n, cAct.actionTarget[n], 6, 4, 0, "\x08펀치");
+            finishAction();
+            break;
+        EUDEndSwitch();
+        break;
+    EUDSwitchCase()(cType.action("도주"));
+        fx.DisplayR(ct.cp, ct.color(n%8), ct.str(cs.Names[n]), "\x04", ct.str(cs.Josa_IGA[n]), " 도주했습니다!");
+        tB.Speed[n] = -1;
+        finishAction();
+        break;
+    EUDSwitchCase()(cType.action("할퀴기"));
+        fx.DisplayR(ct.cp, ct.color(n%8), ct.str(cs.Names[n]), "\x04의 ", cType.strSkill("할퀴기"), "!");
+        finishAction();
+        break;
+    EUDSwitchCase()(cType.action("물기"));
+        fx.DisplayR(ct.cp, ct.color(n%8), ct.str(cs.Names[n]), "\x04의 ", cType.strSkill("물기"), "!");
+        finishAction();
+        break;
+    EUDSwitchCase()(cType.action("냥냥펀치"));
+        ct.playSoundP(ct.cp, "nyanPunch");
+        fx.DisplayR(ct.cp, ct.color(n%8), ct.str(cs.Names[n]), "\x04의 ", cType.strSkill("냥냥펀치"), "!");
+        finishAction();
+        break;
+    EUDEndSwitch();
+    timer += 1;
+}

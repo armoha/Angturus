@@ -1,0 +1,15 @@
+import helpers.fx;
+
+var u;
+function setGraphics(unit: TrgUnit) {
+    if(u != unit) {
+        bwrite_epd(EPD(0x6644F8) + $U("effect")/4, $U("effect")%4, unit);
+        u = unit;
+    }
+}
+function ZergBloodLarge(loc: TrgLocation) {
+    setGraphics(185);
+    const epd = fx.getNextUnit()[[1]];
+    CreateUnit(1, "effect", loc, P8);
+    dwadd_epd(epd + 0x110/4, 1);
+}

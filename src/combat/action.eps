@@ -1,0 +1,115 @@
+import combat.system as cs;
+import combat.turnBar as tb;
+import helpers.location as loc;
+import helpers.fx;
+import combat.cType;
+
+const action = EUDArray(16);
+const actionType = EUDArray(16);
+const actionTarget = EUDArray(16);
+const actionTarget2 = EUDArray(16);
+const actionRange = EUDArray(16);
+function actionInit(i) {
+    action[i] = 0;
+    actionType[i] = 0;
+    actionTarget[i] = 0;
+    actionTarget2[i] = 0;
+    actionRange[i] = 0;
+}
+
+function issueWait(n) {
+    bwrite_epd(cs.EPDs[n] + 0x4D / 4, 1, 1);  // STOP
+    dwwrite_epd(cs.EPDs[n] + 0x10 / 4, dwread_epd(cs.EPDs[n] + 0x28 / 4));
+}
+function issueMove(n) {
+    loc.SetLocEPD($L("t0"), cs.EPDs[n] + 0x28 / 4);
+    Order(cs.UnitIDs[n], AllPlayers, "t0", Move, $L("t1") + n + 1);
+}
+function issueWaitAll() {
+    for(var i = 0; i <= 15; i++) {
+        if(cs.PTRs[i] >= 1) issueWait(i);
+    }
+}
+function SetAction(p, act : cType.Action, type, x, y, Range) {
+    MoveLocation($L("t1") + p + 1, "pathfinder", P11, "Anywhere");
+    action[p] = act;
+    actionType[p] = type;
+    actionTarget[p] = (x == -1) ? loc.getLocTL($L("t1") + p)[[0]] : x;
+    actionTarget2[p] = (y == -1) ? loc.getLocTL($L("t1") + p)[[1]] : y;
+    actionRange[p] = Range;
+}
+function checkAction(i) {
+    /*
+        현재 진행 중인 액션을 3가지 유형으로 나누고, 그에 맞게 행동 시킴.
+        0 없음
+        1 캐스팅: 대상 X, 시전만 완료하면 됨.
+        2 대상지정형: 대상이 사거리에 닿을 때까지 이동, 사거리 안이면 시전 시작.
+        3 지점지정형: 지점이 사거리에 닿을 때까지 이동, 사거리 안이면 시전 시작.
+    */
+    EUDSwitch(actionType[i]);
+    EUDSwitchCase()(0);  // None
+        return 0;
+    EUDSwitchCase()(1);  // 캐스팅
+        if(tb.Speed[i] >= 71478) { return 2; /*시전 완료*/ }
+        return 0;
+    EUDSwitchCase()(2);  // 타겟팅
+        if(cs.PTRs[actionTarget[i]] == 0) {
+            // 대상이 사망했으면 명령 취소, 다시 명령
+            tb.Speed[i] = 47652;
+            actionInit(i);
+            return 0;
+        }
+        const cX, cY = dwbreak(dwread_epd(cs.EPDs[i] + 0x28/4))[[0, 1]];
+        const tEPD = cs.EPDs[actionTarget[i]] + 0x28/4;
+        const tX, tY = dwbreak(dwread_epd(tEPD))[[0, 1]];
+        if(fx.getDstSquare(cX, tX, cY, tY) <= actionRange[i]) {
+            if(tb.Speed[i] >= 71478) { return 2; /*시전 완료*/ }
+            return 0;
+        } else {
+            tb.Speed[i] = 47652;  // 무빙 캐스팅 있으면 이때도 속도 오름.
+            loc.SetLoc($L("t1") + i, tX, tY);
+            return 1;  // 대상이 사거리 밖임.
+        }
+    EUDSwitchCase()(3);  // 지점 지정형
+        const X, Y = dwbreak(dwread_epd(cs.EPDs[i] + 0x28/4))[[0, 1]];
+        if(fx.getDstSquare(X, actionTarget[i], Y, actionTarget2[i]) <= actionRange[i]) {
+            if(action[i] == 1) { tb.Speed[i] = 71478; }
+            if(tb.Speed[i] >= 71478) { return 2; /*시전 완료*/ }
+            return 0;
+        } else {
+            if(action[i] != 1) { tb.Speed[i] = 47652; }
+            //loc.SetLoc($L("t1") + i, X, Y);
+            return 1;
+        }
+    EUDEndSwitch();
+    return 0;
+}
+
+function casting(n) {
+    issueWait(n);
+    if(tb.Speed[n] < 47652) {
+        dwadd_cp(0, cs.SpeedAdd[n]);
+        return;
+    }
+    EUDSwitch(action[n]);
+    EUDSwitchCase()(cType.action("공격"));  // Attack (Punch)
+        dwadd_cp(0, 3*cs.SpeedAdd[n]);  //47652를 200이 10초, 절반이니 100이 10초
+        break;
+    EUDSwitchCase()(cType.action("도주"));
+        dwadd_cp(0, cs.SpeedAdd[n]/2);  //47652를 200이 10초, 절반이니 100이 10초
+        break;
+    EUDSwitchCase()(cType.action("할퀴기"));
+        dwadd_cp(0, 4*cs.SpeedAdd[n]);
+        break;
+    EUDSwitchCase()(cType.action("물기"));
+        dwadd_cp(0, 3*cs.SpeedAdd[n]);
+        break;
+    EUDSwitchCase()(cType.action("냥냥펀치"));
+        dwadd_cp(0, 2*cs.SpeedAdd[n]/3);
+        break;
+    EUDEndSwitch();
+}
+function movingCasting(n) {
+    issueMove(n);
+    if(action[n] == 1) dwadd_cp(0, 200);
+}

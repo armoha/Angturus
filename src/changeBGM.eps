@@ -1,0 +1,97 @@
+import bgmplayer as bgm;
+import combat.flow as cf;
+import scenes.talkVariables as tV;
+import customText3 as ct;
+import scenes.base as sBase;
+import helpers.timeline as tL;
+
+var place;
+function changePlace(x) {
+    sBase.initTimer(13);
+    sBase.initTimer(14);
+    sBase.initTimer(15);
+    place = x;
+}
+function screenover(x1, x2, y1, y2) {
+    if(Memory(0x628448, AtLeast, x1) && Memory(0x628448, AtMost, x2) &&
+        Memory(0x628470, AtLeast, y1) && Memory(0x628470, AtMost, y2)) {
+        return True;
+    } else {
+        return False;
+    }
+}
+function main() {
+    if(cf.inCombat || tV.isTalking) return;
+
+    const screenX = dwread_epd_safe(EPD(0x628448));
+    const screenY = dwread_epd_safe(EPD(0x628470));
+    const locTable = EPD(0x58DC60);
+    dwwrite_epd(locTable + 5*$L("screen"), screenX);
+    dwwrite_epd(locTable + 5*$L("screen")+2, screenX+640);
+    dwwrite_epd(locTable + 5*$L("screen")+1, screenY);
+    dwwrite_epd(locTable + 5*$L("screen")+3, screenY+382);
+    RemoveUnitAt(1, 214, 11, P9);
+
+    if(Bring(Force1, Exactly, 0, "(factories)", "screen")) {
+        return;
+    }
+
+    if(CountdownTimer(AtLeast, 6*60) && CountdownTimer(AtMost, 19*60)) {
+        // daytime
+        if(bgm.bgmNo != bgm.bgmList.index("VAOd") && screenover(3109, 5253, 1723, 2784)) {
+            changePlace(1);
+            bgm.setBGM(bgm.bgmList.index("VAOd"));
+        } else if(bgm.bgmNo != bgm.bgmList.index("Trqd") && screenover(2336, 3488, 3232, 4256)) {
+            changePlace(2);
+            bgm.setBGM(bgm.bgmList.index("Trqd"));
+        }
+    } else {
+        // night
+        if(bgm.bgmNo != bgm.bgmList.index("VAOn") && screenover(3109, 5253, 1723, 2784)) {
+            changePlace(1);
+            bgm.setBGM(bgm.bgmList.index("VAOn"));
+        } else if(bgm.bgmNo != bgm.bgmList.index("Trqn") && screenover(2336, 3488, 3232, 4256)) {
+            changePlace(2);
+            bgm.setBGM(bgm.bgmList.index("Trqn"));
+        }
+    }
+}
+
+function displayPlaceName() {
+    EUDSwitch(place);
+    EUDSwitchCase()(1);
+        foreach(t : tL.Timeless(123, index=15)) {
+            if(t <= 30) DisplayText("\n ");
+            else if(t <= 120) {
+                sBase.fadeIn("\x13\x11Emberstar \x04Village", interval=3, index=13);
+                sBase.fadeIn("\x13\x11잔불별 \x04마을", interval=3, index=14);
+            } else {
+                if(t == 121) {
+                    sBase.initTimer(13);
+                    sBase.initTimer(14);
+                }
+                sBase.fadeOut("\x13\x11Emberstar \x04Village", interval=3, index=13);
+                sBase.fadeOut("\x13\x11잔불별 \x04마을", interval=3, index=14);
+            }
+        }
+        break;
+    EUDSwitchCase()(2);
+        foreach(t : tL.Timeless(123, index=15)) {
+            if(t <= 30) DisplayText("\n ");
+            else if(t <= 120) {
+                sBase.fadeIn("\x13\x1CTere\x04binthia", interval=3, index=13);
+                sBase.fadeIn("\x13\x1C테레\x04빈시아", interval=3, index=14);
+            } else {
+                if(t == 121) {
+                    sBase.initTimer(13);
+                    sBase.initTimer(14);
+                }
+                sBase.fadeOut("\x13\x1CTere\x04binthia", interval=3, index=13);
+                sBase.fadeOut("\x13\x1C테레\x04빈시아", interval=3, index=14);
+            }
+        }
+        break;
+    EUDSwitchDefault()();
+        DisplayText("\n ");
+    EUDEndSwitch();
+}

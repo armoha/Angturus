@@ -1,0 +1,145 @@
+import combat.system as cs;
+import helpers.fx;
+import customText3 as ct;
+import combat.combatMessage as cMsg;
+import combat.cType;
+
+function attackResolution(src, target, attackType) {
+    /*
+        toHit = 95% + DEX - AGI/CON
+        type:
+            0 == weapon
+            1 == spell
+            2 == none (can't evade)
+    */
+    EUDSwitch(attackType);
+    EUDSwitchCase()(0);
+        if(cs.AttackToHit[src] >= cs.Dodge[target] + 30) return 1;
+        const hitDice = fx.Rand(100) + cs.AttackToHit[src] - cs.Dodge[target];
+        if(hitDice <= 29 || hitDice >= 0x80000000) return 0;
+        return 1;
+    EUDSwitchCase()(1);
+        if(cs.SpellToHit[src] >= cs.Resist[target] + 30) return 1;
+        const HitDice = fx.Rand(100) + cs.SpellToHit[src] - cs.Resist[target];
+        if(HitDice <= 29 || HitDice >= 0x80000000) return 0;
+        return 1;
+    EUDEndSwitch();
+    return 1;
+}
+const dTypeArray = [
+    Db(u2utf8("\x1F대기")),
+    Db(u2utf8("\x19대지")),
+    Db(u2utf8("\x1C물")),
+    Db(u2utf8("\x08불")),
+    Db(u2utf8("\x1B물리"))
+];
+const dTypeColor = [
+    Db(u2b("\x1F")),
+    Db(u2b("\x19")),
+    Db(u2b("\x1C")),
+    Db(u2b("\x08")),
+    Db(u2b("\x1B"))
+];
+function inflictDamage(src, target, amount, dmgType, attackType, id: cType.Skill) {
+    /*
+        baseDamage
+        +attribute, skill: x(100 + 3*(MIG) + 5*Skill + misc,buffs) / 100
+        -DR
+        -resistance: x(100 - enemyRes)
+        +crit x(100 |+50 |+crit modifiers) / 100
+
+        dmgType:
+            0 == air(lightning)
+            1 == earth(poison)
+            2 == water
+            3 == fire
+            4 == physical
+
+        attackType:
+            0 == Weapon (check Dodge)
+            1 == Spell (check Resist)
+            2 == None (can't evade, no src)
+    */
+    fx.MakeR();
+    ct.addText(ct.color(target % 8), ct.str(cs.Names[target]), "\x04", ct.str(cs.Josa_EUN[target]), " ");  // X는
+    if(attackResolution(src, target, attackType)) {
+        var dmg = amount;
+        if(attackType == 0 || attackType == 1) {
+            dmg = dmg * ((attackType == 0) ? cs.AttackPower[src] : cs.SpellPower[src]) / 100;
+            const critDice = fx.Rand(100) + ((attackType == 0) ? cs.AttackCrit[src] : cs.SpellCrit[src]);
+            if(critDice >= 100 && critDice <= 0x7FFFFFFF) {
+                dmg = dmg * 2;
+                cMsg.cMessage("criticalHit");
+            }
+        }
+        if(dmg < 0x80000000) {  // (-): healing
+            EUDSwitch(dmgType);
+            EUDSwitchCase()(0);
+                dmg = dmg - cs.DR_A[target];
+                if(dmg >= 0x80000000) {
+                    dmg = 0;
+                    break;
+                }
+                dmg = dmg * (100 - cs.rA[target]) / 100;
+                break;
+            EUDSwitchCase()(1);
+                dmg = dmg - cs.DR_E[target];
+                if(dmg >= 0x80000000) {
+                    dmg = 0;
+                    break;
+                }
+                dmg = dmg * (100 - cs.rE[target]) / 100;
+                break;
+            EUDSwitchCase()(2);
+                dmg = dmg - cs.DR_W[target];
+                if(dmg >= 0x80000000) {
+                    dmg = 0;
+                    break;
+                }
+                dmg = dmg * (100 - cs.rW[target]) / 100;
+                break;
+            EUDSwitchCase()(3);
+                dmg = dmg - cs.DR_F[target];
+                if(dmg >= 0x80000000) {
+                    dmg = 0;
+                    break;
+                }
+                dmg = dmg * (100 - cs.rF[target]) / 100;
+                break;
+            EUDSwitchCase()(4);
+                dmg = dmg - cs.DR_P[target];
+                if(dmg >= 0x80000000) {
+                    dmg = 0;
+                    break;
+                }
+                dmg = dmg * (100 - cs.rP[target]) / 100;
+                break;
+            EUDEndSwitch();
+        }
+        ct.addText(ct.str(cType.skillName[id]), "\x04", ct.str(cType.skillURO[id]), " ");  // X는 Y로
+        if(dmg >= 0x80000000) {
+            cs.HP[target] -= dmg;
+            ct.addText("\x07", -dmg, "의 \x08생명력\x04을 회복했다.");
+        } else if(dmg == 0) {
+            ct.addText("아무런 피해도 입지 않았다.");
+        } else {
+            if(cs.SP[target] >= dmg) {
+                cs.SP[target] -= dmg;
+            } else {
+                dmg -= cs.SP[target];
+                cs.SP[target] = 0;
+                cs.HP[target] -= dmg;
+            }
+            ct.addText(ct.str(dTypeColor[dmgType]), dmg, "\x04의 ", ct.str(dTypeArray[dmgType]), " 피해\x04를 받았다.");
+        }
+    } else {
+        ct.addText(ct.str(cType.skillName[id]), "\x04", ct.str(cType.skillEUL[id]), " ");  // X는 Y를
+        if(attackType == 0) {
+            ct.addText("\x19회피했다.");
+        } else {
+            ct.addText("\x1B저항했다.");
+        }
+    }
+    ct.displayText(ct.cp);
+    cs.updateHP(target);
+}

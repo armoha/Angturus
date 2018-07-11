@@ -1,0 +1,26 @@
+import txtManager as tM;
+import customText3 as ct;
+import scenes.talkVariables as tV;
+
+
+function QCcheck() {
+    if(tV.isTalkFinished && tV.talkState == 0) {
+        tV.EveryonePress(1);
+    }
+    for(var i = 0; i < 5; i++) {
+        if(Deaths(i, Exactly, 1, "18D:playerexist")) {
+            if(Deaths(i, AtLeast, 2, "4D:NQCNextTalk")) {
+                SetDeaths(i, Subtract, 2, "4D:NQCNextTalk");
+                tM.toggleSkip(i);
+            }
+            if(tV.isTalkFinished && tV.talkState == 0) {
+                if(Deaths(i, Exactly, 1, "4D:NQCNextTalk") || tM.skip[i]) {
+                    tM.pressNext[i] = 1;
+                }
+                if(!tM.pressNext[i]) {
+                    tV.EveryonePress(0);
+                }
+            }
+        }
+    }
+}

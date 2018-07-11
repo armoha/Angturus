@@ -1,0 +1,106 @@
+import combat.turnBar as tB;
+import combat.flow as cf;
+import customText3 as ct;
+import scenes.base as sBase;
+import scenes.intro as sIntro;
+import helpers.timeline as tL;
+import helpers.fx;
+import scenes.op.op01;
+import changeBGM as cBGM;
+import scenes.talkVariables as tV;
+
+var txtPtr;
+const pressNext = EUDArray(5);
+const skip = EUDArray(5);
+
+function debugTxtPtr(line) {
+    dwwrite_epd(EPD(0x640B58), txtPtr + line);
+    if(txtPtr + line >= 11) {
+        dwwrite_epd(EPD(0x640B58), txtPtr + line - 11);
+    }
+}
+
+function resetTalking() {
+    for(var i = 0; i < 5; i++) {
+        pressNext[i] = 0;
+    }
+    foreach(i : py_range(13)) {
+        sBase.initTimer(i);
+    }
+    tV.TalkSound(0);
+    tV.TalkState(0);
+    tV.SceneNumberAdd1();
+    tV.TalkStart(1);
+    tV.EveryonePress(0);
+}
+
+function toggleSkip(i) {
+    if(skip[i] == 0) {
+        skip[i] = 1;
+        ct.printP(i, "\x13\x1B대화 스킵 \x07켬");
+    } else {
+        skip[i] = 0;
+        ct.printP(i, "\x13\x19대화 스킵 \x08끔");
+    }
+}
+
+function conversations();
+function main() {
+    txtPtr = dwread_epd(EPD(0x640B58));
+
+    SetCurrentPlayer(ct.cp);
+    ct.reset_epd();
+
+    if(cf.combatDisplay) {  // 전투 중 = 턴바 출력
+        tB.printCombatString();
+        debugTxtPtr(1);
+        DisplayText("\x13\x04|대기                                                                                                               \x08|액션                                            \x07|");
+    } else if(tV.line2Vacant) {  // 비전투 → 현재 위치 출력
+        cBGM.displayPlaceName();
+    }
+
+    if(!sIntro.isEnd()) {
+        sIntro.main();
+    }
+    if(tV.isTalking) {
+        if(tV.isEveryonePressNext && tV.talkState == 0) {
+            resetTalking();
+        }
+
+        tV.TalkFinish(0);
+        conversations();
+
+        if(tV.isTalkFinished && tV.talkState == 0) {
+            if(pressNext[ct.cp]) {  // 내가 next 눌렀나
+                sBase.rainbow("\x13\x04\x13다른 플레이어를 기다립니다", interval=2);
+            } else {
+                foreach(t : tL.Timeline(26)) {
+                    if(t <= 14) {
+                        if(fx.mouseoverNext()) {
+                            DisplayText("\x13\x13\x07다음(\x17F\x07) ▼");
+                        } else DisplayText("\x13\x13\x04다음(\x17F\x04) ▼");
+                    } else DisplayText(" ");
+                }
+            }
+        } else DisplayText(" ");
+
+        foreach(t : tL.Timeline(2)) {
+            if(!tV.isTalkFinished && t == 1) {
+                EUDSwitch(tV.talkSound);
+                EUDSwitchCase()(0);
+                    PlayWAV("talk.ogg");
+                    EUDBreak();
+                EUDEndSwitch();
+            }
+        }
+        //tV.isTalkStarted = False;
+    }
+    dwwrite_epd(EPD(0x640B58), txtPtr);
+}
+function conversations() {
+    EUDSwitch(tV.conversation);
+    EUDSwitchCase()(0);
+        op01.main();
+        EUDBreak();
+    EUDEndSwitch();
+}

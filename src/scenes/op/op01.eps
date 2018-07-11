@@ -1,0 +1,154 @@
+import scenes.base as s_base;
+import customText3 as ct;
+import scenes.talkVariables as tV;
+import scenes.speakers;
+import helpers.timeline as tL;
+import helpers.shape;
+import bgmplayer;
+import helpers.fx;
+import init;
+import etc.lightOn;
+
+var goddessEffectOn;
+
+function main() {
+    EUDSwitch(tV.sceneNumber);
+    EUDSwitchCase()(0);
+        SetVariables(tV.sceneNumber, 6);  // TEST TEST!
+        foreach(t : tL.Timeless(182)) {
+            if(t <= 60) {
+                tV.Cutscene();
+            } else if(t <= 180) {
+                tV.TalkState(0);
+                if(s_base.talk("\x13\x04눈을 뜨니 풍경이 낯설지만 왠지 마음이 놓인다.", index=1)) {
+                    if(s_base.talk("\x13\x04날은 따뜻하지만 시원한 바닷바람이 분다.", index=2)) {
+                        tV.TalkFinish(s_base.talk("\x13\x04밀려오는 파도 소리와 갈매기 울음소리에 마음이 평화롭다.", index=3));
+                    } DisplayText(" ");
+                } else DisplayText("\n ");
+            } else {
+                tV.TalkFinish(1);
+                ct.print("\x13\x04눈을 뜨니 풍경이 낯설지만 왠지 마음이 놓인다.\n\x13\x04날은 따뜻하지만 시원한 바닷바람이 분다.\n\x13\x04밀려오는 파도 소리와 갈매기 울음소리에 마음이 평화롭다.");
+                ct.print("\x13\x07* \x04다음 대화\x17로 넘기려면 \x1FF 키 \x17또는 \x1F화면의 '다음' 버튼\x17을 누르세요. 자동 넘기기는 \x1B스킵!\x17입니다.");
+            }
+        }
+        break;
+    EUDSwitchCase()(1);
+        foreach(t : tL.Timeless(62)) {
+            if(t == 0) {
+                DisplayText("\n\n\n ");
+            } else if(t <= 60) {
+                speakers.talk("YOU2");
+                tV.TalkFinish(s_base.talk("\x13\x04여긴 어디, 난 누구?", index=1));
+                DisplayText(" ");
+            } else {
+                tV.TalkFinish(1);
+                speakers.talk("YOU2");
+                ct.print("\x13\x04여긴 어디, 난 누구?");
+                ct.print("\x13\x07* \x04다음 대화\x17로 넘기려면 \x1FF 키 \x17또는 \x1F화면의 '다음' 버튼\x17을 누르세요. 자동 넘기기는 \x1B스킵!\x17입니다.");
+            }
+        }
+        break;
+    EUDSwitchCase()(2);
+        foreach(t : tL.Timeless(102)) {
+            if(t <= 100) {
+                tV.Cutscene();
+                if(t == 0) {
+                    bgmplayer.setBGM(-1);
+                    DisplayText("\n\n ");
+                } else if(t == 50) {
+                    MoveLocation("camera", 222, P12, "goddess");
+                    fx.cView("camera");
+                } else if(t == 80) {
+                    bgmplayer.setBGM(bgmplayer.bgmList.index("cut5"));
+                    fx.cView("camera");
+                    wwrite_epd(EPD(0x665AC0 + 1696 + 198 * 2), 0, 972);  // Heal(Large)
+                    const nUnitEPD = epdread_epd(EPD(0x628438));
+                    CreateUnit(1, "effect", "goddess", P8);
+                    SetMemoryEPD(nUnitEPD + 0x110 / 4, Add, 16);
+                } else if(t == 100) {
+                    fx.cView("camera");
+                    const nUnitEPD = epdread_epd(EPD(0x628438));
+                    CreateUnitWithProperties(1, "여신", "goddess", P7, UnitProperty(cloaked=true));
+                    ModifyUnitEnergy(1, "여신", P7, "goddess", 0);
+                    GiveUnits(1, "여신", P7, "goddess", P10);
+                    fx.setpcolor($P10, 181);
+                    fx.setUnitColor(nUnitEPD, $P10);
+                    CreateUnit(1, "eye", "SE1", init.alive);
+                    CreateUnit(1, "eye", "SE3", init.alive);
+                }
+            } else {
+                tV.TalkState(0);
+                goddessEffectOn = 1;
+                speakers.talk("goddess");
+                tV.TalkFinish(s_base.talk("\x13\x07", ct.str(0x57EEEB + 36 * ct.cp), "\x04씨 들리나요?...", index=1));
+                DisplayText(" ");
+            }
+        }
+        break;
+    EUDSwitchCase()(3);
+        speakers.talk("goddess");
+        if(s_base.talk("\x13\x04아... 제 말이 들리고 있군요...", interval=2)) {
+            tV.TalkFinish(s_base.talk("\x13\x04힘든 부탁이지만... 이쪽 세상으로 와주세요.", interval=2, index=1));
+        } else DisplayText(" ");
+        break;
+    EUDSwitchCase()(4);
+        speakers.talk("goddess");
+        if(s_base.talk("\x13\x04악의 세력이 점차 거세지고 있어요.", interval=3)) {
+            foreach(t : tL.Timeless(72, index=1)) {
+                if(t <= 70) {
+                    tV.Cutscene();
+                    tV.TalkStart(0);
+                    DisplayText(" ");
+                } else {
+                    tV.TalkFinish(s_base.talk("\x13\x07희망의 성지\x04가 파괴된 건 시작일 뿐이에요...", interval=2, index=2));
+                }
+            }
+        } else DisplayText(" ");
+        foreach(t : tL.Timeless(122, index=3)) {
+            if(t == 0) {
+                Order("eye", Force1, "SE1", Patrol, "SE2");
+                Order("eye", Force1, "SE3", Patrol, "SE4");
+                MoveLocation("camera", "eye", Force1, "SE1");
+            } else if(t >= 36 && t <= 100) {
+                foreach(t : tL.Timeline(shape.logSpiralCycle)) {
+                    MoveLocation("effect", 222, P12, "SE5");
+                    shape.HeroesOfStorm(t, 391, 1);
+                    MoveLocation("effect", 222, P12, "SE6");
+                    shape.HeroesOfStorm(t, 391, 1);
+                }
+            }
+            if(t >= 60) {
+                wwrite_epd(EPD(0x665AC0 + 1696 + 198 * 2), 0, 444);
+                const nEPD = epdread_epd(EPD(0x628438));
+                CreateUnit(1, "effect", "SE5", P8);
+                dwwrite_epd(nEPD + 0x110/4, 9);
+            }
+            if(t >= 120) {
+                tV.TalkState(0);
+            }
+            MoveLocation("camera", "eye", Force1, "camera");
+            fx.cView("camera");
+        }
+        break;
+    EUDSwitchCase()(5);
+        speakers.talk("goddess");
+        if(s_base.talk("\x13\x04동료를 모아 다가오는 위협에서 구해주세요...")) {
+            tV.TalkFinish(s_base.talk("\x13\x04허수아비가 \x07뇌\x04를, 양철나무꾼이 \x07심장\x04을, 사자가 \x07용기\x04를 찾게 도와주세요.", index=1));
+        } else DisplayText(" ");
+        break;
+    EUDSwitchCase()(6);
+        RemoveUnit("Map Revealer", Force1);
+        MoveUnit(0, "(factories)", Force1, "temp", "spawn");
+        fx.cView("spawn");
+        SetVariables(tV.conversation, 0);
+        SetVariables(tV.isTalking, 0);
+        SetVariables(lightOn.lightSwitch, 1);
+        EUDBreak();
+    EUDEndSwitch();
+
+    if(goddessEffectOn) {
+        //MuteUnitSpeech();
+        MoveLocation("effect", 222, P12, "goddess");
+        shape.Goddess(391);
+    }
+}

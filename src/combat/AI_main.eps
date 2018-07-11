@@ -1,0 +1,10 @@
+import combat.system as cs;
+import combat.AI.cat;
+
+function main() {
+    EUDSwitch(cs.UnitIDs[cs.selectingAction]);
+    EUDSwitchCase()($U("고양이"));
+        cat.main();
+        break;
+    EUDEndSwitch();
+}

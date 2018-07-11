@@ -1,0 +1,94 @@
+import combat.system as cs;
+import combat.abilities as cA;
+import combat.turnBar as tb;
+import combat.action as cAct;
+import combat.effect as ce;
+import combat.playerCommand as cPC;
+import combat.combatMessage as cMsg;
+import helpers.fx;
+import helpers.location as loc;
+import combat.combatInit;
+import customText3 as ct;
+import combat.buffManager as bM;
+
+/*  전투 흐름 관리
+1. 플레이어가 액션 선택 중
+2. 액션 중인 캐릭터들 조건 확인
+├ 대상이 죽었으면 취소→재명령
+├ 시전 완료?
+3. 행동 선택
+*/
+var inCombat;  // 전투 중인지
+var combatDisplay;  // 턴 바 표시
+
+function checkActionAndCasting();
+function orderSpeedManager();
+function combatFlow() {
+    cMsg.main();
+    cs.update();
+    if(cs.selectingAction <= 15) {
+        cPC.main();
+    } else if(cs.executingAction <= 15) {
+        ce.main();
+    } else {
+        checkActionAndCasting();
+    }
+}
+function main() {
+    if(inCombat) {
+        combatFlow();
+    } else if(combatInit.encounterCheck()) {
+        inCombat = 1;
+        combatDisplay = 1;
+    }
+}
+function checkActionAndCasting() {
+    // Speed AtLeast 71478 && casting/attacking finish = executeAction!
+    const checkActionArray = EUDArray(16);
+    for(var i = 0; i <= 15; i++) {
+        checkActionArray[i] = cAct.checkAction(i);
+        if(checkActionArray[i] == 2) {
+            SetVariables(cs.executingAction, i);
+            SetVariables(ce.timer, 0);
+            cAct.issueWaitAll();
+            return;
+        }
+    }
+
+    // no current action && Speed AtLeast 47652 = selectAction!
+    SetCurrentPlayer(tb.SpeedEPD);
+    for(var i = 0; i <= 15; i++) {
+        if(cs.PTRs[i] >= 1 && tb.Speed[i] >= 47652 && cAct.action[i] <= 1) {
+            SetVariables(cs.selectingAction, i);
+            bM.expireBuffByTurn(i);
+            if(i <= 5) {
+                ct.playSoundP(ct.cp, "turn");
+                SetCurrentPlayer(cs.EPDs[i] + 0x98/4);
+                cPC.BQueueInit(i);  // 대기열 초기화
+                cA.pathfindingInit();
+                loc.SetLocEPD($L("cursor"), cs.EPDs[i] + 0x28 / 4);
+                MoveUnit(All, "pathfinder", AllPlayers, "Anywhere", "cursor");
+                fx.cView("cursor");
+            }
+            fx.DisplayR(ct.cp, ct.color(i % 8), ct.str(cs.Names[i]), "\x04의 차례입니다.");
+            tb.Speed[i] = 47652;
+            cAct.issueWaitAll();
+            cs.TransEPD(i);
+            return;
+        }
+        SetMemory(0x6509B0, Add, 1);
+    }
+
+    // Add each Speed by SpeedAdd according to current action.
+    SetCurrentPlayer(tb.SpeedEPD);
+    for(var i = 0; i <= 15; i++) {
+        if(cs.PTRs[i] >= 1) {
+            if(checkActionArray[i] == 1) {  // 사거리 밖
+                cAct.movingCasting(i);
+            } else {  // 사거리 안
+                cAct.casting(i);
+            }
+        }
+        SetMemory(0x6509B0, Add, 1);
+    }
+}

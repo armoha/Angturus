@@ -1,0 +1,44 @@
+import customText3 as ct;
+import scenes.base as sb;
+import helpers.timeline as tL;
+import combat.cType;
+
+const contents = EUDArray(11);
+
+function getTextPtr() {
+    return dwread_epd(EPD(0x640B58));
+}
+function cMessage(txt : cType.CombatMsg) {
+    const oldcp = getcurpl();
+    setcurpl(ct.cp);
+    const n = getTextPtr();
+    DisplayText(" ");
+    foreach(txtPtr : py_range(11)) {
+        if(n == txtPtr) SetVariables(tL.v[txtPtr], 0);
+    }
+    contents[n] = txt;
+    setcurpl(oldcp);
+}
+function criticalHit(n) {
+    const oldcp = getcurpl();
+    setcurpl(ct.cp);
+    const oldptr = getTextPtr();
+    dwwrite_epd(EPD(0x640B58), n);
+    foreach(txtPtr : py_range(11)) {
+        if(n == txtPtr && sb.fadeIn("\x13\x06크리티컬 \x08히트!!!", index=txtPtr)) {
+            contents[n] = 0;
+        }
+    }
+    dwwrite_epd(EPD(0x640B58), oldptr);
+    setcurpl(oldcp);
+}
+function main() {
+    for(var i = 0; i <= 10; i++) {
+        if(contents[i] == 0) continue;
+        EUDSwitch(contents[i]);
+        EUDSwitchCase()(cType.combatMsg("criticalHit"));
+            criticalHit(i);
+            break;
+        EUDEndSwitch();
+    }
+}

@@ -1,0 +1,44 @@
+import helpers.timeline as tL;
+import customText3 as ct;
+import init;
+import bgmplayer as bgm;
+
+var sound_Daybreak, sound_Dusk;
+function toggleBGM();
+function main() {
+    SetCurrentPlayer(ct.cp);
+    PauseTimer();
+    foreach(t : tL.Timeline(12)) {
+        if(t == 0) {
+            SetCountdownTimer(Add, 1);
+        }
+    }
+    if(CountdownTimer(Exactly, 6*60) && sound_Daybreak == 0) {
+        GiveUnits(All, "eye", P11, "Anywhere", init.alive);
+        PlayWAV("DaybreakRooster.wav");
+        sound_Daybreak = 1;
+        toggleBGM();
+    } else if(CountdownTimer(Exactly, 19*60) && sound_Dusk == 0) {
+        for(var i = 0; i < 5; i++) {
+            GiveUnits(All, "eye", i, "Anywhere", P11);
+        }
+        PlayWAV("DuskWolf.wav");
+        sound_Dusk = 1;
+        toggleBGM();
+    } else if(CountdownTimer(AtLeast, 24*60)) {
+        SetCountdownTimer(Subtract, 24*60);
+        sound_Daybreak = 0;
+        sound_Dusk = 0;
+    }
+}
+function toggleBGM() {
+    if(bgm.bgmNo == bgm.bgmList.index("VAOd")) {
+        bgm.setBGM(bgm.bgmList.index("VAOn"));
+    } else if(bgm.bgmNo == bgm.bgmList.index("VAOn")) {
+        bgm.setBGM(bgm.bgmList.index("VAOd"));
+    } else if(bgm.bgmNo == bgm.bgmList.index("Trqd")) {
+        bgm.setBGM(bgm.bgmList.index("Trqn"));
+    } else if(bgm.bgmNo == bgm.bgmList.index("Trqn")) {
+        bgm.setBGM(bgm.bgmList.index("Trqd"));
+    }
+}

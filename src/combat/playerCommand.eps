@@ -1,0 +1,107 @@
+import combat.system as cs;
+import combat.abilities as cA;
+import init;
+import helpers.advrw;
+import customText3 as ct;
+import combat.buffManager as bM;
+import combat.AI_main;
+
+function BQueueInit(n) {
+    SetDeaths(CurrentPlayer, SetTo, 0xE40000, 0);
+    SetMemory(0x6509B0, Add, 1);
+    SetDeaths(CurrentPlayer, SetTo, 0xE40000, 0);
+    SetMemory(0x6509B0, Add, 1);
+    SetDeaths(CurrentPlayer, SetTo, 0xE4 + cs.FP[n] * 0x1000000, 0);
+}
+function BQueueDetect(n) {  // detect buildQueue & set unit energy(FP)
+    const Instant = 41, 42, 37, 38, 39, 43, 45, 46, 66, 67, 71, 72, 83, 84, 44, 50;
+    foreach(i, iUnit : py_enumerate(Instant)) {  // 즉시시전 스킬
+        if(Deaths(CurrentPlayer, Exactly, iUnit * 0x10000, 0)) {
+            cA.useInstant(n, i);
+            return;
+        }
+    }
+    if(Deaths(CurrentPlayer, Exactly, 69 * 0x10000, 0)) {
+        cA.defend(n);
+    }
+}
+function OrderInit(n) {
+    advrw.bwrite_cp(0, 1, 1);  // [1]STOP
+    SetMemory(0x6509B0, Subtract, (0x4C-0x28)/4);
+    const unitPos = dwread_cp(0);
+    SetMemory(0x6509B0, Subtract, (0x28-0x10)/4);
+    dwwrite_cp(0, unitPos);
+}
+function OrderDetect(n) {
+    const TargetingOrder = 115, 122, 121, 143, 113, 119, 144, 146, 142, 120, 145, 147, 180, 181, 185, 186;
+    const order = advrw.bread_cp(0, 1);
+    EUDSwitch(order);
+    foreach(i, tOrder : py_enumerate(TargetingOrder)) {
+        EUDSwitchCase()(tOrder);  // 타겟팅 스킬
+        cA.useTarget(n, i);
+        break;
+    }
+    EUDSwitchCase()(6);  // Move
+        cA.move(n);
+        break;
+    EUDSwitchCase()(10);  // Attack
+        cA.attack(n);
+        break;
+    EUDSwitchCase()(177);  // 엘리HealMove = Attack
+        // Attack
+        cA.attack(n);
+        break;
+    EUDEndSwitch();
+}
+function displayCursor(n);
+function main() {
+    for(var n = 0; n <= 15; n++) {
+        if(cs.isExist(n)) {  // FP가 EPDs + 0xC/4임.
+            /* 즉시시전 스킬은 생산대기열 인식,
+            타겟팅 스킬 + 이동, 공격은 명령 인식 */
+            if(n <= 4) {
+                SetMemory(0x6509B0, Add, (0x98-0xC)/4);
+                if(n == cs.selectingAction) {
+                    displayCursor(n);
+                    BQueueDetect(n);
+                    BQueueInit(n);
+                    SetMemory(0x6509B0, Subtract, (0xA0-0x4C)/4);
+                    OrderDetect(n);
+                } else {
+                    // 플레이어 턴이 아니면 생산대기열만 초기화
+                    BQueueInit(n);
+                    SetMemory(0x6509B0, Subtract, (0xA0-0x4C)/4);
+                }
+            } else {
+                SetMemory(0x6509B0, Add, (0x4C-0xC)/4);
+            }
+            // 모든 유닛은 Stop으로 명령 초기화
+            OrderInit(n);
+        }
+    }
+    cA.main();
+    if(cs.selectingAction >= 8) {
+        AI_main.main();
+    }
+}
+function displayCursor(n) {
+    const controllersMouse = $L("m1") + 1 + init.commander[n];  // NOT index
+
+    MoveUnit(1, "cursor", AllPlayers, "Anywhere", controllersMouse);
+    if(Bring(P10, Exactly, 0, "cursor", "temp")) {
+        MoveLocation("cursor", "cursor", P10, "Anywhere");
+    } else {
+        MoveLocation("cursor", "cursor", P11, "Anywhere");
+    }
+
+    if(Bring(P11, Exactly, 0, "pathfinder", "cursor")) {
+        MoveUnit(1, "cursor", P11, "Anywhere", "temp");
+        MoveUnit(1, "cursor", P10, "Anywhere", "cursor");
+    } else {
+        MoveUnit(1, "cursor", P11, "Anywhere", "cursor");
+        MoveUnit(1, "cursor", P10, "Anywhere", "temp");
+    }
+    if(cA.pathAct == -1) {
+        Order("pathfinder", AllPlayers, "Anywhere", Move, controllersMouse);
+    }
+}

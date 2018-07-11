@@ -1,0 +1,219 @@
+import customText3 as ct;
+import helpers.advrw;
+import helpers.fx;
+import helpers.location as loc;
+import combat.turnBar as tb;
+import helpers.timeline as tL;
+
+var selectingAction = -1;
+var executingAction = -1;
+const moveOpportunity = [1, 1, 1, 1, 1];
+function finishSelection() {
+    selectingAction = -1;
+    for(var i = 0; i <= 15; i++) { tb.icon[i] = tb.initIcon[i]; }
+    MoveUnit(All, "cursor", AllPlayers, "Anywhere", "temp");
+    MoveUnit(All, "pathfinder", AllPlayers, "Anywhere", "temp");
+}
+function finishExecution() {
+    moveOpportunity[executingAction] = 1;
+    executingAction = -1;
+    for(var i = 0; i <= 15; i++) { tb.icon[i] = tb.initIcon[i]; }
+}
+
+const PTRs = EUDArray(16);
+const EPDs = EUDArray(16);
+const UnitIDs = [$U("F.A.H"), $U("Elemental"), $U("AceRPG"), $U("Fare."), 61, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1];
+function TransEPD(n) {
+    loc.SetLocEPD($L("trans"), EPDs[n] + 0x28 / 4);
+    SetDeaths(P12, SetTo, UnitIDs[n], "4D:NQCNextTalk");
+}
+const Names = EUDArray(16);
+const Josa_IGA = EUDArray(16);  // 이/가
+const Josa_EUN = EUDArray(16);  // 은/는
+const Josa_EUL = EUDArray(16);  // 을/를
+const Josa_URO = EUDArray(16);  // (으)로
+const Colors = [0, 1, 2, 3, 4, 5, 6, 7, 0, 1, 2, 3, 4, 5, 6, 7];
+
+/*  파흐 엘리 에알 페어 더페
+힘힘  9   5   6   8   7
+민첩  7   6   9   5   8
+솜씨  5   8   6   9   7
+지능  6   9   8   6   5
+체질  8   6   5   9   6
+재치  7   8   8   5   9*/
+
+const MIG = [9, 5, 6, 8, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+const AGI = [7, 6, 9, 5, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+const DEX = [5, 8, 6, 9, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+const INT = [6, 9, 8, 6, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+const CON = [8, 6, 5, 9, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+const WIT = [7, 8, 8, 5, 9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+
+const LV = [1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+var partyEXP;
+const Hunger = EUDArray(5);  /*TODO! : EXP, Hunger 다른 파일로 분리!*/
+
+const HP, maxHP = EUDArray(16), EUDArray(16);  // 40 + (2 + 4×CON)×LV
+const SP, maxSP = EUDArray(16), EUDArray(16);  // 실드
+const FP = EUDArray(16);  // 에너지
+const FPgain = EUDArray(16);  // 수급률
+
+function SetMaxHP(n) {  // 40 + (2 + 4×CON)×LV
+    const _maxHP = 40 + (2 + 4*CON[n])*LV[n];
+    dwwrite_epd(EPD(0x662350) + UnitIDs[n], _maxHP * 256);
+    maxHP[n] = _maxHP;
+}
+function SetHPFull(n) {
+    dwwrite_epd(EPDs[n] + 0x8/4, maxHP[n] * 256);
+    HP[n] = maxHP[n];
+}
+function SetMaxSP(n, amount) {  // ???
+    const epd, subp = div(UnitIDs[n], 2);
+    wwrite_epd(EPD(0x660E00) + epd, subp, amount);
+    maxSP[n] = amount;
+}
+function updateHP(n) {
+    dwwrite_epd(EPDs[n] + 0x60/4, SP[n]*256);
+    dwwrite_epd(EPDs[n] + 0x8/4, HP[n]*256);
+}
+function isExist(i) {
+    dwwrite_epd(EPD(0x6509B0), EPDs[i]);  // epd of CUnits
+    if(Memory(0x6509B0, AtLeast, EPD(0x59CCA8)) &&
+        Memory(0x6509B0, AtMost, EPD(0x628298))) {  // valid CUnit
+        SetMemory(0x6509B0, Add, 0xC/4);  // +0x0C CSprite 
+        if(Deaths(CurrentPlayer, AtLeast, 0x629D98, 0) &&
+           Deaths(CurrentPlayer, AtMost, 0x63FD04, 0)) {  // valid CSprite
+            return 1;
+        }
+    }
+    return 0;
+}
+const SpeedAdd, Duration = EUDArray(16), EUDArray(16);
+// 대미지
+const AttackPower, SpellPower, BuffPower = EUDArray(16), EUDArray(16), EUDArray(16);
+// 치명
+const AttackCrit, SpellCrit = EUDArray(16), EUDArray(16);
+// 명중
+const AttackToHit, SpellToHit = EUDArray(16), EUDArray(16);
+// 회피
+const Dodge, Resist = EUDArray(16), EUDArray(16);
+
+// 속성 저항
+const rA, rE, rW, rF, rP = EUDArray(16), EUDArray(16), EUDArray(16), EUDArray(16), EUDArray(16);
+// 피해 감소
+const DR_A, DR_E, DR_W, DR_F, DR_P = EUDArray(16), EUDArray(16), EUDArray(16), EUDArray(16), EUDArray(16);
+
+const empty7 = EUDArray(7);
+function statInit(n) {
+    // MIGHT
+    AttackPower[n] = 100 + 3*MIG[n];
+    SpellPower[n] = 100 + 3*MIG[n];
+    BuffPower[n] = 100 + 3*MIG[n];
+    // AGI
+    SpeedAdd[n] = 200 + 6*AGI[n];
+    Dodge[n] = 2*AGI[n];
+    // DEX
+    AttackToHit[n] = DEX[n];
+    SpellToHit[n] = DEX[n];
+    FPgain[n] = 100 + 4*DEX[n];
+    // INT
+    Duration[n] = 100 + 5*INT[n];
+    // CON
+    if(UnitIDs[n] <= 227) SetMaxHP(n);
+    Resist[n] = 2*CON[n];
+    // WIT
+    AttackCrit[n] = WIT[n];
+    SpellCrit[n] = WIT[n];
+}
+function setStats(n, statArray : EUDArray) {
+    MIG[n] = statArray[0];
+    AGI[n] = statArray[1];
+    DEX[n] = statArray[2];
+    INT[n] = statArray[3];
+    CON[n] = statArray[4];
+    WIT[n] = statArray[5];
+    LV[n] = statArray[6];
+}
+function initChar(i) {
+    PTRs[i], EPDs[i] = 0, 0;
+    UnitIDs[i] = -1;
+    setStats(i, empty7);
+    statInit(i);
+    HP[i], maxHP[i], SP[i], maxSP[i], FP[i] = 0, 0, 0, 0, 0;
+    tb.Speed[i] = -1;
+    rA[i], rE[i], rW[i], rF[i], rP[i] = 0, 0, 0, 0, 0;
+    DR_A[i], DR_E[i], DR_W[i], DR_F[i], DR_P[i] = 0, 0, 0, 0, 0;
+}
+function update() {  // SP, FP 갱신
+    foreach(t : tL.Timeline(20)) {
+        if(t == 0) {
+            for(var i = 0; i <= 15; i++) {
+                if(isExist(i)) {  // 0xC
+                    SetMemory(0x6509B0, Subtract, (0xC-0x8)/4);
+                    SetDeaths(CurrentPlayer, SetTo, HP[i]*256, 0);
+                    SetMemory(0x6509B0, Add, (0x60-0x8)/4);  // 실드
+                    SetDeaths(CurrentPlayer, SetTo, SP[i]*256, 0);
+                    SetMemory(0x6509B0, Add, (0xA0-0x60)/4);  // 에너지
+                    SetDeaths(CurrentPlayer, SetTo, 0xE4 + FP[i] * 0x1000000, 0);
+                } else if(PTRs[i] >= 1) {
+                    initChar(i);  /* TODO: 사망 인식 */
+                }
+            }
+        }
+    }
+}
+function setColor() {
+    for(var i = 0; i < 16; i++) {
+        if(isExist(i)) {  // isExist() set curpl to CSprite(epd)
+            setcurpl(epdread_cp(0) + 0x8/4);  // CSprite +0x8 (0xA is playerID)
+            // remove previous color and add new color.
+            SetDeaths(CurrentPlayer, Subtract, advrw.dwread_cp_safe(0) & 0xFF0000, 0);
+            SetDeaths(CurrentPlayer, Add, Colors[i] * 0x10000, 0);
+        }
+    }
+}
+
+function init() {
+    for(var i = 0; i < 5; i++) {
+        PTRs[i], EPDs[i] = dwepdread_epd(EPD(0x628438));
+        CreateUnit(1, UnitIDs[i], "temp", P8);
+        GiveUnits(1, UnitIDs[i], P8, "temp", P12);
+    }
+    SetVariables(tb.SpeedEPD, EPD(tb.Speed));
+    Names[0] = Db(u2utf8("\x08F.\x04A.\x1CH"));
+    Names[1] = Db(u2utf8("\x0EE\x04lemental"));
+    Names[2] = Db(u2utf8("\x04A\x0Fce\x1FRPG"));
+    Names[3] = Db(u2utf8("\x10F\x1Eare."));
+    Names[4] = Db(42);
+    ct.ct_print(Names[4], "\x11", ct.str(0x57EEEB + ct.cp * 36));
+    const I, GA = Db(u2utf8("이")), Db(u2utf8("가"));
+    Josa_IGA[0] = GA;
+    Josa_IGA[1] = I;
+    Josa_IGA[2] = I;
+    Josa_IGA[3] = GA;
+    Josa_IGA[4] = GA;
+    const EUN, NEUN = Db(u2utf8("은")), Db(u2utf8("는"));
+    Josa_EUN[0] = NEUN;
+    Josa_EUN[1] = EUN;
+    Josa_EUN[2] = EUN;
+    Josa_EUN[3] = NEUN;
+    Josa_EUN[4] = NEUN;
+    const EUL, REUL = Db(u2utf8("을")), Db(u2utf8("를"));
+    Josa_EUL[0] = REUL;
+    Josa_EUL[1] = EUL;
+    Josa_EUL[2] = EUL;
+    Josa_EUL[3] = REUL;
+    Josa_EUL[4] = REUL;
+    const RO = Db(u2utf8("로"));
+    for(var i = 0; i <= 4; i++) {
+        Josa_URO[i] = RO;
+    }
+    for(var i = 5; i <= 15; i++) {
+        Names[i] = Db(42);
+        Josa_IGA[i] = Db(4);
+        Josa_EUN[i] = Db(4);
+        Josa_EUL[i] = Db(4);
+        Josa_URO[i] = Db(7);
+    }
+    //setColor();
+}

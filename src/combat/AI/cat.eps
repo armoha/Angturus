@@ -1,0 +1,49 @@
+import combat.system as cs;
+import combat.action as cAct;
+import combat.AI.base;
+import combat.buffManager as bM;
+import helpers.fx;
+import customText3 as ct;
+
+function getAttackingPlayer() {
+    for(var p = 0; p <= 4; p++) {
+        if(cs.PTRs[p] >= 1 && 
+            cAct.actionType[p] == 2 && cAct.actionTarget[p] == cs.selectingAction) {
+            return p;
+        }
+    }
+    return -1;
+}
+function scoring() {
+    for(var p = 0; p <= 7; p++) {
+        fx.SetKills(p, SetTo, 0, "pathfinder");
+        if(p <= 4 && cs.PTRs[p] >= 1) {
+            fx.SetKills(p, SetTo, 0x3FFFFFFF, "pathfinder");
+            fx.SetKills(p, Add, -cs.rP[p], "pathfinder");  // 물리저항만큼 -점수
+            fx.SetKills(p, Add, fx.Rand(30), "pathfinder");
+        }
+    }
+    // 가장 가까우면 +25점
+    fx.SetKills(base.getNearbyP(cs.selectingAction)[[0]], Add, 25, "pathfinder");
+    return fx.getMostKills("pathfinder");
+}
+function main() {
+    const n = cs.selectingAction;
+    if(cs.HP[n] <= cs.maxHP[n] / 2) {  // 체력이 50% 이하면 도주
+        cAct.SetAction(n, "도주", 1, -1, -1, -1);  // 3=도주
+        ct.playSoundP(ct.cp, "catLovely");
+    } else {
+        if(getAttackingPlayer() <= 4) {
+            bM.newBuff(n, n, "방어");  // 공격 대상이면 방어
+            ct.playSoundP(ct.cp, "catLovely");
+        } else {
+            const target = scoring();
+            const r = fx.Rand(10);
+            if(r == 0) { cAct.SetAction(n, "냥냥펀치", 2, target, 0, 144*144); }  // 10%
+            else if(r <= 5) { cAct.SetAction(n, "할퀴기", 2, target, 0, 32*32); }  // 50%
+            else { cAct.SetAction(n, "물기", 2, target, 0, 32*32); }  // 40%
+            ct.playSoundP(ct.cp, "catOffensive");
+        }
+    }
+    cs.finishSelection();
+}

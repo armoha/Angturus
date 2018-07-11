@@ -1,0 +1,38 @@
+import scenes.talkVariables as tV;
+import helpers.fx;
+import customText3 as ct;
+import type;
+
+const knowname = EUDArray(700);
+
+function talk(x : type.AngString) {
+    if(tV.isTalkStarted == 1) {
+        tV.TalkStart(0);
+        fx.cView("camera");
+        MoveLocation("trans", x, AllPlayers, "camera");
+        SetDeaths(P12, SetTo, x, "4D:NQCNextTalk");
+    }
+    EUDSwitch(x);
+    EUDSwitchCase()(type.Ang("F.A.H"));
+        DisplayText("\x13\x08F.\x04A.\x1CH");
+        EUDBreak();
+    EUDSwitchCase()(type.Ang("Elemental"));
+        DisplayText("\x13\x0EE\x04lemental");
+        EUDBreak();
+    EUDSwitchCase()(type.Ang("AceRPG"));
+        DisplayText("\x13\x04A\x0Fce\x1FRPG");
+        EUDBreak();
+    EUDSwitchCase()(type.Ang("Fare."));
+        DisplayText("\x13\x10F\x1Eare.");
+        EUDBreak();
+    EUDSwitchCase()(type.Ang("YOU2"));
+        ct.print("\x13\x1B", ct.str(0x57EEEB + 36*ct.cp));
+        EUDBreak();
+    EUDSwitchCase()(type.Ang("goddess"));
+        if(knowname[type.Ang("goddess")]) {
+            DisplayText("\x13\x11여신");
+        } else DisplayText("\x13\x1F???");
+        EUDBreak();
+    EUDEndSwitch();
+    ct.reset_epd();
+}

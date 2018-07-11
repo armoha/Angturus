@@ -1,0 +1,129 @@
+import combat.system as cs;
+import combat.action as cAct;
+import combat.skillTooltip;
+import combat.turnBar as tb;
+import combat.buffManager as bM;
+import helpers.location as loc;
+import customText3 as ct;
+import init;
+import helpers.timeline as tL;
+import combat.cType;
+import helpers.fx;
+
+var looseCheck;
+var pathP;
+var pathAct = -1;
+var pathTimer;
+var pathX, pathY;
+var pathTarget;
+function setPathfinding(n, Act: cType.Action, looseFlag, target) {
+    pathX, pathY = dwbreak(dwread_epd(cs.EPDs[n] + 0x58 / 4))[[0, 1]];
+    loc.SetLocEPD($L("t1") + n, cs.EPDs[n] + 0x58 / 4);
+    MoveLocation("looseCheck", 222, P12, $L("t1") + n + 1);
+    looseCheck = looseFlag;
+    pathP = n;
+    pathAct = Act;
+    pathTimer = 0;
+    pathTarget = target;
+}
+function useInstant(n, slot) {
+    /*
+        1. 버튼에 스킬이 등록돼있는가?
+        2. 쿨다운 / CP / 에너지가 충분한가?
+        3. 침묵 걸린건 아닌가?
+        4. ???
+        5. ㄱㄱ
+    */
+}
+
+function useTarget(n, slot) {
+
+}
+function defend(n) {
+    bM.newBuff(n, n, "방어");
+    cs.finishSelection();
+}
+function move(n) {
+    if(pathAct != -1) { return; }
+    if(n <= 4 && cs.moveOpportunity[n] == 0) {
+        if(fx.Rand(8) == 0) ct.playSoundP(init.commander[n], "cantDoThat");
+        else ct.playSoundP(init.commander[n], "sound\Misc\Buzz.wav");
+        ct.printP(init.commander[n], "\x13\x17::  \x02이전 턴에 \x07이미 \x04이동했습니다.  \x17::");
+        return;
+    }
+    setPathfinding(n, "이동", 0, 0);  // 1=Move
+}
+function checkValidTarget(n) {
+    if(MemoryEPD(cs.EPDs[n] + 0x5C / 4, Exactly, 0)) return -1;
+    const targetPTR = dwread_epd(cs.EPDs[n] + 0x5C / 4);
+    for(var i = 0; i <= 15; i++) {
+        if(cs.PTRs[i] >= 1 && cs.PTRs[i] == targetPTR) {
+            return i;
+        }
+    }
+    return -1;
+}
+function attack(n) {
+    if(pathAct != -1) { return; }
+    const target = checkValidTarget(n);
+    if(target == -1) {
+        if(n <= 4) {
+            if(fx.Rand(8) == 0) ct.playSoundP(init.commander[n], "thatsNotAValidTarget");
+            else ct.playSoundP(init.commander[n], "sound\Misc\Buzz.wav");
+            ct.printP(init.commander[n], "\x13\x17::  \x08유효한 공격 대상\x04이 아닙니다.  \x17::");
+        }
+        return;
+    }
+    setPathfinding(n, "공격", 1, target);  // 2=Attack
+}
+function pathfindingInit() {
+    looseCheck = 0;
+    pathAct = -1;
+    pathX, pathY = 0, 0;
+    pathTimer = 0;
+    pathTarget = -1;
+}
+function pathfindingCheck() {
+    if(pathAct == -1) return 0;
+    const tloc = $L("t1") + pathP;
+    foreach(t : tL.Timeline(12)) {
+        if(t == 0) {
+            MoveLocation("effect", "pathfinder", P10, "Anywhere");
+            MoveUnit(1, "pathfinder", P11, "Anywhere", "effect");
+        }
+    }
+    Order("pathfinder", P10, "Anywhere", Move, tloc+1);
+    Order("pathfinder", P11, "Anywhere", Move, tloc+1);
+    pathTimer += 1;
+    if(pathTimer >= 28) { return 2;  /*fail*/ }
+    const targetLoc = (looseCheck == 1) ? $L("looseCheck") : tloc;
+    if(Bring(P11, AtLeast, 1, "pathfinder", targetLoc+1)) { return 1; /*success*/
+    } else { return 0; }
+}
+function main() {
+    const pathfindingR = pathfindingCheck();
+    const p = pathP;
+    if(pathfindingR == 1) {
+        EUDSwitch(pathAct);
+        EUDSwitchCase()(1);  // Move
+            cAct.SetAction(p, pathAct, 3, -1, -1, 8*8);
+            fx.DisplayR(ct.cp, ct.color(p%8), ct.str(cs.Names[p]), "\x04", ct.str(cs.Josa_IGA[p]), " \x17이동\x04합니다.");
+            cs.moveOpportunity[p] = 0;
+            tb.Speed[p] = 0;
+            break;
+        EUDSwitchCase()(2);  // Attack
+            cAct.SetAction(p, pathAct, 2, pathTarget, -1, 32*32);
+            fx.DisplayR(ct.cp, ct.color(p%8), ct.str(cs.Names[p]), "\x04", ct.str(cs.Josa_IGA[p]), " \x08공격\x04합니다.");
+            break;
+        EUDEndSwitch();
+        pathfindingInit();
+        cs.finishSelection();
+    } else if(pathfindingR == 2) {
+        if(p <= 4) {
+            if(fx.Rand(8) == 0) ct.playSoundP(init.commander[p], "cantDoThat");
+            else ct.playSoundP(init.commander[p], "sound\Misc\Buzz.wav");
+            ct.printP(init.commander[p], "\x13\x17::  \x04대상 지점에 \x08도달할 수 없습니다.  \x17::");
+        }
+        pathfindingInit();
+    }
+}

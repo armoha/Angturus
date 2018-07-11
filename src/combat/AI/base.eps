@@ -1,0 +1,35 @@
+import combat.system as cs;
+
+function getFarthestP(n) {
+    var p = -1;
+    var dst = 0;
+    const x, y = dwbreak(dwread_epd(cs.EPDs[n] + 0x28/4))[[0, 1]];
+    for(var i = 0; i <= 4; i++) {
+        if(cs.PTRs[i] >= 1) {
+            const a, b = dwbreak(dwread_epd(cs.EPDs[i] + 0x28/4))[[0, 1]];
+            const dxdy = (x-a)*(x-a) + (y-b)*(y-b);
+            if(dst <= dxdy) {
+                p = i;
+                dst = dxdy;
+            }
+        }
+    }
+    return p, dst;
+}
+
+function getNearbyP(n) {
+    var p = -1;
+    var dst = 0xFFFFFFFF;
+    const x, y = dwbreak(dwread_epd(cs.EPDs[n] + 0x28/4))[[0, 1]];
+    for(var i = 0; i <= 4; i++) {
+        if(cs.PTRs[i] >= 1) {
+            const a, b = dwbreak(dwread_epd(cs.EPDs[i] + 0x28/4))[[0, 1]];
+            const dxdy = (x-a)*(x-a) + (y-b)*(y-b);
+            if(dst >= dxdy) {
+                p = i;
+                dst = dxdy;
+            }
+        }
+    }
+    return p, dst;
+}

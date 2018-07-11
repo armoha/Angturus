@@ -1,0 +1,34 @@
+import helpers.fx;
+
+var keyUp, mouseUp;
+
+function main() {
+    var keyEvent, mouseEvent = 1, 1;
+
+    // 1. 키/마우스 뗀 상태면 스위치 ON
+    if(Memory(0x596A5C, Exactly, 0)) {
+        keyUp = 1;
+        keyEvent = 0;
+    }
+    if(Memory(0x6CDDC0, Exactly, 0)) {
+        mouseUp = 1;
+        mouseEvent = 0;
+    }
+
+    // 2. 키/마우스 뗐었다가 새로 누름 → 인식 
+    SetSwitch("nextDialogue", Clear);
+    if(keyUp == 1 && Memory(0x68C144, Exactly, 0) && bread_epd(EPD(0x596A5C), 2) == 1) {
+        // 채팅 중이 아니고, F 키 인식 → 대사 넘기기
+        SetSwitch("nextDialogue", Set);
+    } else if(mouseUp == 1 && Memory(0x6CDDC0, Exactly, 2)
+        && fx.mouseoverNext()) {
+        // 마우스 클릭
+        /*0x6CDDC4 (331416) Mouse Coordinate X: SimpleData Relative to the screen. [4, 1]
+        0x6CDDC8 (331417) Mouse Coordinate Y: SimpleData Relative to the screen. [4, 1]*/
+        SetSwitch("nextDialogue", Set);
+    }
+
+    // 3. 아무 키/마우스 누른 상태면 스위치 OFF
+    if(keyEvent == 1) keyUp = 0;
+    if(mouseEvent == 1) mouseUp = 0;
+}

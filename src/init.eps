@@ -1,0 +1,126 @@
+import combat.system as cs;
+import bgmplayer as bgm;
+import customText3 as ct;
+import helpers.fx;
+
+var alive;
+var pathfinder;
+const commander = EUDArray(5);
+function getLeastCharacter() {
+    var ret;
+    for(var i = 0; i <= 4; i++) {
+        if(Deaths(i, Exactly, 1, "18D:playerexist")) {
+            ret = i;
+            setcurpl(i);
+            if(CommandLeast("(factories)")) {
+                return i;
+            }
+        }
+    }
+    return ret;
+}
+function pCheck() {  // periodic check
+    CreateUnit(1, "Map Revealer", "Anywhere", P8);
+    RemoveUnit("Map Revealer", P8);
+    for(var i = 0; i < 5; i++) {  // 리더보드 켜기
+        if(Deaths(i, Exactly, 1, "18D:playerexist")) {
+            if(!playerexist(i)) {
+                SetDeaths(i, SetTo, 0, "18D:playerexist");
+                const pType = dwread_epd(EPD(0x57EEE8) + 9 * i) & 0xFF;
+                SetMemoryEPD(EPD(0x57EEE8) + 9 * i, Add, 4 - pType);
+                CreateUnit(5, "filler", "temp", i);
+            } else {
+                alive = i;
+            }
+        }
+    }
+    if(Command(P12, AtLeast, 1, "(factories)")) {
+        for(var i = 0; i <= 4; i++) {
+            if(Command(P12, AtLeast, 1, cs.UnitIDs[i])) {
+                const p = getLeastCharacter();
+                GiveUnits(1, cs.UnitIDs[i], P12, "Anywhere", p);
+                commander[i] = p;
+                cs.SetMaxHP(i);
+                cs.SetHPFull(i);
+                fx.HotkeyUnit(cs.EPDs[i], p, 1 + i, 0);
+            }
+        }
+        cs.setColor();
+    }
+}
+
+function init() {
+    // 부리야
+    /*SetMemory(0x666394, Add, 8192000);
+    CreateUnit(1, 194, "spawn", P8);*/
+
+    // 미니맵 색
+    bwrite(0x581DD6 + $P11, 117);  
+
+    // pathfinder 생성
+    var epd = epdread_epd(EPD(0x628438));
+    pathfinder = epd;
+    CreateUnit(1, "pathfinder", "temp", P8);
+    dwadd_epd(epd + 0xDC/4, 0x10000300);
+    GiveUnits(1, "pathfinder", P8, "temp", P11);
+
+    epd = epdread_epd(EPD(0x628438));
+    CreateUnit(1, "pathfinder", "temp", P8);
+    dwadd_epd(epd + 0xDC/4, 0x10A00300);
+    GiveUnits(1, "pathfinder", P8, "temp", P10);
+
+    // cursor 생성
+    wwrite(0x665AC0 + 1696 + 282 * 2, 445);
+
+    epd = epdread_epd(EPD(0x628438));
+    CreateUnit(1, "cursor", "temp", P8);
+    dwadd_epd(epd + 0xDC/4, 0xA00300);
+    GiveUnits(1, "cursor", P8, "temp", P11);
+
+    bwrite(0x666778 + 14000 + 445 * 1, 16);
+
+    epd = epdread_epd(EPD(0x628438));
+    CreateUnit(1, "cursor", "temp", P8);
+    dwadd_epd(epd + 0xDC/4, 0xA00300);
+    GiveUnits(1, "cursor", P8, "temp", P10);
+
+    wwrite(0x665AC0 + 1696 + 282 * 2, 355);
+    bwrite(0x666778 + 14000 + 445 * 1, 0);
+
+
+    fx.cView("camera");
+    ct.cprint(ct.strptr(23)+1, ct.str(0x57EEEB + 36 * ct.cp));
+    for(var i = 0; i < 8; i++) {
+        SetCurrentPlayer(i);
+        SetAllianceStatus(P9, Ally);
+        SetAllianceStatus(P10, Ally);
+        SetAllianceStatus(P11, Ally);
+        SetAllianceStatus(P12, Ally);
+
+        if(i < 5) {  // 리더보드 켜기
+            if(playerexist(i)) {
+                SetDeaths(i, SetTo, 1, "18D:playerexist");
+                alive = i;
+            } else {
+                CreateUnit(5, "filler", "temp", i);
+            }
+            const pType = dwread_epd(EPD(0x57EEE8) + 9 * i) & 0xFF;
+            if(pType == 0) SetMemoryEPD(EPD(0x57EEE8) + 9 * i, Add, 2);
+        } else {
+            CreateUnit(5, "filler", "temp", i);
+        }
+    }
+    bwrite_epd(EPD(0x581D74), 0, 0x00);  // P11 Selection circle
+    GiveUnits(All, "eye", P12, "init", P9);
+    while(Command(P9, AtLeast, 1, "eye")) {
+        MoveLocation("init", "eye", P9, "Anywhere");
+        RemoveUnitAt(1, "eye", "init", P9);
+        CreateUnit(1, "eye", "init", P8);
+        GiveUnits(1, "eye", P8, "init", P12);
+    }
+    SetCountdownTimer(SetTo, 7*60);
+    cs.init();
+    bgm.setBGM(8);
+    bgm.init();
+    randomize();
+}

@@ -1,0 +1,42 @@
+var talkSound;  // 0: default sound
+var talkState;  // 0: continue, 1: chatInput, 2: cutscene
+var isTalkStarted = 1;
+var isTalkFinished = 0;
+var isTalking = 1;
+var isEveryonePressNext;
+var sceneNumber;
+var line2Vacant = 1;
+var conversation;
+
+function TalkSound(x) {
+    talkSound = x;
+}
+function TalkState(x) {
+    talkState = x;
+}
+function TalkStart(x) {
+    isTalkStarted = x;
+}
+function TalkFinish(x) {
+    isTalkFinished = x;
+}
+function Talking(x) {
+    isTalking = x;
+}
+function EveryonePress(x) {
+    isEveryonePressNext = x;
+}
+function SceneNumber(x) {
+    sceneNumber = x;
+}
+function Line2Vacant(x) {
+    line2Vacant = x;
+}
+function SceneNumberAdd1() {
+    sceneNumber += 1;
+}
+function Cutscene() {
+    isTalkStarted = 1;
+    isTalkFinished = 1;
+    talkState = 2;
+}

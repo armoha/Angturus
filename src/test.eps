@@ -1,0 +1,25 @@
+import customText3 as ct;
+import helpers.timeline as tL;
+var nextEPD;
+function main() {
+    if(Command(P1, Exactly, 0, "pathfinder")) {
+        nextEPD = epdread_epd(EPD(0x628438));
+        CreateUnit(1, "pathfinder", "screen", P1);
+        dwwrite_epd(nextEPD + 0x110/4, 50);
+        //dwadd_epd(nextEPD + 0xDC/4, 0xA00000);
+        ct.printP(ct.cp, "\x13FAH!");
+    } else {
+        foreach(t : tL.Timeline(20)) {
+            if(t <= 9) {
+                bwrite_epd(nextEPD + 0xA4/4, 2, 109);
+            } else {
+                bwrite_epd(nextEPD + 0xA4/4, 2, 110);
+            }
+        }
+    }
+    Order("pathfinder", P1, "Anywhere", Move, "m1");
+    if(Bring(P1, AtLeast, 1, "pathfinder", "m1")) {
+        ct.printP(ct.cp, "\x13FAHFAHFAH!");
+        RemoveUnit("pathfinder", P1);
+    }
+}

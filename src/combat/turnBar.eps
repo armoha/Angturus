@@ -1,0 +1,211 @@
+import customText3 as ct;
+import helpers.fx;
+
+/**
+ * print combat turnBar and manage Speed(418).
+ */
+
+var SpeedEPD;
+const Speed = [0, 1000, 71507, 3000, 4000, -1, -1, -1, 71507, 900, 60000, 11000, 28000, 1300, -1, -1];  // 23826
+const SIndex = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+const icon = [
+    0xA599E208,
+    0xA599E20E,
+    0xA599E20F,
+    0xA599E210,
+    0xA599E211,
+    0xA599E215,
+    0xA599E216,
+    0xA599E217,
+    0x8598E208,
+    0x8598E20E,
+    0x8598E20F,
+    0x8598E210,
+    0x8598E211,
+    0x8598E215,
+    0x8598E216,
+    0x8598E217,
+];
+const initIcon = [
+    0xA599E208,
+    0xA599E20E,
+    0xA599E20F,
+    0xA599E210,
+    0xA599E211,
+    0xA599E215,
+    0xA599E216,
+    0xA599E217,
+    0x8598E208,
+    0x8598E20E,
+    0x8598E20F,
+    0x8598E210,
+    0x8598E211,
+    0x8598E215,
+    0x8598E216,
+    0x8598E217,
+];
+
+function sortSpeed();
+function turnBar(n);
+function drawIcon(n);
+
+function printCombatString() {
+    const n = sortSpeed();
+    ct.reset();
+    ct.reset_epd();
+    turnBar(n);
+    drawIcon(n);
+
+    SetCurrentPlayer(ct.cp);
+    DisplayText(ct.strBuffer);
+}
+
+/*function getLeastKills(unit) {
+    for(var p = 0; p < 8; p++) {
+        SetCurrentPlayer(p);
+        if(LeastKills(unit)) return p;
+    }
+}*/
+function sortSpeed() {
+    var t, ret = 16, 16;
+    SetMemory(0x6509B0, SetTo, SpeedEPD);
+    //foreach(k : py_range(4, 8, 2)) {
+    for(var k = 4; k < 8; k += 2) {
+        //foreach(i : py_range(8)) {
+        for(var i = 0; i < 8; i++) {
+            if(Deaths(CurrentPlayer, AtMost, 0x8000000, 0)) dwwrite_epd(EPD(0x5878A4) + 12 * k + i, dwread_cp(0));
+            else {
+                dwwrite_epd(EPD(0x5878A4) + 12 * k + i, -1);
+                ret -= 1;
+                t -= 1;
+            }
+            SetMemory(0x6509B0, Add, 1);
+        }
+    }
+    var p, q;
+    p = fx.getLeastKills(4);
+    q = fx.getLeastKills(6);
+    var i = 0;
+    while(t > 0) {
+        if(MemoryEPD(EPD(0x5878A4) + 12 * 4 + p, AtMost, dwread_epd(EPD(0x5878A4) + 12 * 6 + q))) {
+            dwwrite_epd(EPD(0x5878A4) + 12 * 4 + p, -1);
+            SIndex[i] = p;
+            p = fx.getLeastKills(4);
+        } else {
+            dwwrite_epd(EPD(0x5878A4) + 12 * 6 + q, -1);
+            SIndex[i] = 8 + q;
+            q = fx.getLeastKills(6);
+        }
+        t -= 1;
+        i += 1;
+    }
+    return ret;
+}
+
+function drawIcon(n) {
+    SetCurrentPlayer(ct.epd + 2);
+    var cp, offset = 0, 0;
+    var speed, Index;
+    var comp = 71478 - 1254 * n;
+    const end_cp = ct.epd + 42 + (n + 3) / 4;
+    const mod = 418 * ((n + 3) % 4);
+    for(var i = 0; i < n; i++) {
+        Index = SIndex[i];
+        speed = Speed[Index];
+        if(speed >= comp) {
+            SetCurrentPlayer(end_cp - (n - i - 1));
+            offset = mod;
+        } else if(speed >= cp + 1672) {
+            const det = (speed - cp) / 1672;
+            cp += 1672 * det;
+            SetMemory(0x6509B0, Add, det);
+            offset = speed - cp;
+        } else if(speed >= cp + offset + 1) {
+            offset = speed - cp;
+        }
+
+        cp += 1254;
+        if(offset < 418) {
+            dwwrite_cp(0, icon[Index]);
+            SetMemory(0x6509B0, Add, 1);
+        } else if(offset < 836) {
+            dwadd_cp(0, -0x20202000);
+            const temp = icon[Index] & 0xFFFFFF;
+            dwadd_cp(0, temp * 0x100);
+            SetMemory(0x6509B0, Add, 1);
+            dwadd_cp(0, -0x20);
+            dwadd_cp(0, (icon[Index] - temp) / 0x1000000);
+        } else if(offset < 1254) {
+            dwadd_cp(0, -0x20200000);
+            const temp = icon[Index] & 0xFFFF;
+            dwadd_cp(0, temp * 0x10000);
+            SetMemory(0x6509B0, Add, 1);
+            dwadd_cp(0, -0x2020);
+            dwadd_cp(0, (icon[Index] - temp) / 0x10000);
+        } else {
+            dwadd_cp(0, -0x20000000);
+            const temp = icon[Index] & 0xFF;
+            dwadd_cp(0, temp * 0x1000000);
+            SetMemory(0x6509B0, Add, 1);
+            dwadd_cp(0, -0x202020);
+            dwadd_cp(0, (icon[Index] - temp) / 0x100);
+        }
+        comp += 1254;
+    }
+    SetCurrentPlayer(end_cp + 1);
+    if(mod < 418) {
+        dwwrite_cp(0, 0);
+    } else if(mod < 836) {
+        dwwrite_cp(0, dwread_cp(0) & 0xFF);
+    } else if(mod < 1254) {
+        dwwrite_cp(0, dwread_cp(0) & 0xFFFF);
+    } else {
+        dwwrite_cp(0, dwread_cp(0) & 0xFFFFFF);
+    }
+    SetMemory(0x6509B0, Add, 1);
+    dwwrite_cp(0, 0);
+}
+
+function turnBar(n) {  // 턴바 스페이스 171개 너비임.
+    SetCurrentPlayer(ct.epd);
+    dwwrite_cp(0, 0x11111113);  // ct.makeText("\x13\x11\x11\x11");
+    SetMemory(0x6509B0, Add, 1);
+
+    for(var i = 1; i <= 43; i++) {
+        dwwrite_cp(0, 0x20202020);  // ct.epd + 44
+        SetMemory(0x6509B0, Add, 1);
+    }
+    if(n <= 4) {
+        if(n == 1) dwwrite_cp(0, 0);  // +45
+        else if(n == 2) dwwrite_cp(0, 0x20);
+        else if(n == 3) dwwrite_cp(0, 0x2020);
+        else /*n == 4*/ dwwrite_cp(0, 0x202020);
+    } else {
+        dwwrite_cp(0, 0x20202020);
+        SetMemory(0x6509B0, Add, 1);
+        if(n <= 8) {
+            if(n == 5) dwwrite_cp(0, 0);  // +46
+            else if(n == 6) dwwrite_cp(0, 0x20);
+            else if(n == 7) dwwrite_cp(0, 0x2020);
+            else /*n == 8*/ dwwrite_cp(0, 0x202020);
+        } else {
+            dwwrite_cp(0, 0x20202020);
+            SetMemory(0x6509B0, Add, 1);
+            if(n <= 12) {
+                if(n == 9) dwwrite_cp(0, 0);  // +47
+                else if(n == 10) dwwrite_cp(0, 0x20);
+                else if(n == 11) dwwrite_cp(0, 0x2020);
+                else /*n == 12*/ dwwrite_cp(0, 0x202020);
+            } else {
+                dwwrite_cp(0, 0x20202020);
+                SetMemory(0x6509B0, Add, 1);
+                if(n == 13) dwwrite_cp(0, 0);  // +48
+                else if(n == 14) dwwrite_cp(0, 0x20);
+                else if(n == 15) dwwrite_cp(0, 0x2020);
+                else /*n == 16*/ dwwrite_cp(0, 0x202020);
+            }
+        }
+    }
+    SetMemory(0x6509B0, Add, 1);
+    dwwrite_cp(0, 0);  // 버그 방지?
+}

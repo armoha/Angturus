@@ -1,0 +1,30 @@
+import init;
+import bgmplayer as bgm;
+import combat.flow as cf;
+import txtManager as tM;
+import chatEvents;
+import changeBGM;
+import etc.lightOn;
+import etc.dayNight;
+import NQCEvents;
+import soundEffects;
+
+function onPluginStart() {
+    soundEffects.load();
+    init.init();
+}
+function beforeTriggerExec() {
+    init.pCheck();
+    lightOn.main();
+    dayNight.main();
+    NQCEvents.main();
+}
+function afterTriggerExec() {
+    chatEvents.QCcheck();
+    changeBGM.main();
+    bgm.checkbgm();
+    cf.main();
+    tM.main();
+    SetMemory(0x6556E4, SetTo, -1);  // 반응속도 개선
+    SetMemory(0x6509A0, SetTo, 0);  // EUD 터보
+}

@@ -1,0 +1,28 @@
+import init;
+
+var lightSwitch;
+function spawnRevealer() {
+    if(Bring(P12, AtLeast, 1, "eye", "revealer") && Bring(Force1, AtLeast, 1, "(factories)", "revealer")) {
+        MoveLocation("init", "eye", P12, "revealer");
+        if(CountdownTimer(AtLeast, 6*60) && CountdownTimer(AtMost, 19*60)) {
+            GiveUnits(1, "eye", P12, "init", init.alive);
+        } else {
+            GiveUnits(1, "eye", P12, "init", P11);
+        }
+    }
+}
+function main() {
+    if(lightSwitch) {
+        // $U("F.A.H"), $U("Elemental"), $U("AceRPG"), $U("Fare."), 61
+        MoveLocation("revealer", "F.A.H", Force1, "Anywhere");
+        spawnRevealer();
+        MoveLocation("revealer", "Elemental", Force1, "Anywhere");
+        spawnRevealer();
+        MoveLocation("revealer", "AceRPG", Force1, "Anywhere");
+        spawnRevealer();
+        MoveLocation("revealer", "Fare.", Force1, "Anywhere");
+        spawnRevealer();
+        MoveLocation("revealer", 61, Force1, "Anywhere");
+        spawnRevealer();
+    }
+}

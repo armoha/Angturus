@@ -1,0 +1,194 @@
+import combat.system as cs;
+import combat.turnBar as tB;
+import combat.formula as fo;
+import combat.cType;
+import helpers.fx;
+
+import customText3 as ct;
+
+/*
+    시작효과
+    만료효과
+    타이머
+*/
+
+const firstBuff = EUDArray(16);
+const lastBuff = EUDArray(16);
+const buffArray = EUDArray(16 * cType.buffN);
+
+object Timer {
+    var interval;
+    var maxInterval;
+    var pDamage;  // periodic damage/healing
+    var pDamageType;
+    var dSP, dFP;  // 재생/제거 효과
+};
+object Offense {
+    var dFPgain;
+    var dAttackPower, dSpellPower, dBuffPower;
+    var dAttackToHit, dSpellToHit;
+    var dAttackCrit, dSpellCrit;
+};
+object Defense {
+    var dDodge, dResist, dSpeedAdd;
+    var rA, rE, rW, rF, rP;  // resist Air, Earth, Water, Fire, Physical
+};
+object Buff {
+    var id;
+    var prev, next;
+    var duration;
+    var timer: Timer;  // 지속효과
+    var offense: Offense;
+    var defense: Defense;
+};
+
+function buffInit(target, buff : Buff) {
+    if(buff.timer >= 1) {  // 시작효과
+        if(buff.timer.pDamage >= 1) fo.inflictDamage(-1, target, buff.timer.pDamage, buff.timer.pDamageType, 2, buff.id);
+        cs.SP[target] += buff.timer.dSP;
+        cs.FP[target] += buff.timer.dFP;
+    }
+
+    if(buff.offense >= 1) {
+        cs.FPgain[target] += buff.offense.dFPgain;
+        cs.AttackPower[target] += buff.offense.dAttackPower;
+        cs.SpellPower[target] += buff.offense.dSpellPower;
+        cs.BuffPower[target] += buff.offense.dBuffPower;
+        cs.AttackCrit[target] += buff.offense.dAttackCrit;
+        cs.SpellCrit[target] += buff.offense.dSpellCrit;
+        cs.AttackToHit[target] += buff.offense.dAttackToHit;
+        cs.SpellToHit[target] += buff.offense.dSpellToHit;
+    }
+
+    if(buff.defense >= 1) {
+        cs.Dodge[target] += buff.defense.dDodge;
+        cs.Resist[target] += buff.defense.dResist;
+        cs.SpeedAdd[target] += buff.defense.dSpeedAdd;
+        cs.rA[target] += buff.defense.rA;
+        cs.rE[target] += buff.defense.rE;
+        cs.rW[target] += buff.defense.rW;
+        cs.rF[target] += buff.defense.rF;
+        cs.rP[target] += buff.defense.rP;
+    }
+}
+function buffEnd(target, buff : Buff) {
+    if(buff.timer >= 1) Timer.free(buff.timer);
+    if(buff.offense >= 1) {  // 만료효과
+        cs.FPgain[target] -= buff.offense.dFPgain;
+        cs.AttackPower[target] -= buff.offense.dAttackPower;
+        cs.SpellPower[target] -= buff.offense.dSpellPower;
+        cs.BuffPower[target] -= buff.offense.dBuffPower;
+        cs.AttackCrit[target] -= buff.offense.dAttackCrit;
+        cs.SpellCrit[target] -= buff.offense.dSpellCrit;
+        cs.AttackToHit[target] -= buff.offense.dAttackToHit;
+        cs.SpellToHit[target] -= buff.offense.dSpellToHit;
+        Offense.free(buff.offense);
+    }
+
+    if(buff.defense >= 1) {
+        cs.Dodge[target] -= buff.defense.dDodge;
+        cs.Resist[target] -= buff.defense.dResist;
+        cs.SpeedAdd[target] -= buff.defense.dSpeedAdd;
+        cs.rA[target] -= buff.defense.rA;
+        cs.rE[target] -= buff.defense.rE;
+        cs.rW[target] -= buff.defense.rW;
+        cs.rF[target] -= buff.defense.rF;
+        cs.rP[target] -= buff.defense.rP;
+        Defense.free(buff.defense);
+    }
+
+    fx.DisplayR(ct.cp, ct.color(target % 8), ct.str(cs.Names[target]), "\x04의 ", ct.str(cType.skillName[buff.id]), "\x04", ct.str(cType.skillIGA[buff.id]), " 사라집니다.");
+    Buff.free(buff);
+}
+
+function B_Free(buff : Buff) {
+    if(buff.timer >= 1) Timer.free(buff.timer);
+    if(buff.offense >= 1) Offense.free(buff.offense);
+    if(buff.defense >= 1) Defense.free(buff.defense);
+    Buff.free(buff);
+}
+function addBuff(target, buff : Buff) {
+    if(firstBuff[target] == 0) {  // 삽입
+        firstBuff[target] = buff;
+        lastBuff[target] = buff;
+        buffArray[target * cType.buffN + buff.id] = buff;
+    } else if(buffArray[target * cType.buffN + buff.id] >= 1) {  // 이미 있으면 갱신
+        const existingBuff = Buff.cast(buffArray[target * cType.buffN + buff.id]);
+        existingBuff.duration = buff.duration;
+        B_Free(buff);
+        return;
+    } else {
+        const LastBuff = Buff.cast(lastBuff[target]); // 기존의 마지막 버프 (null 아님)
+        LastBuff.next = buff;
+        buff.prev = LastBuff;
+        lastBuff[target] = buff;
+        buffArray[target * cType.buffN + buff.id] = buff;
+    }
+    buffInit(target, buff);
+}
+function removeBuff(target, buff : Buff) {  // 제거
+    const prevBuff = (buff.prev >= 1) ? Buff.cast(buff.prev) : 0;
+    const nextBuff = (buff.next >= 1) ? Buff.cast(buff.next) : 0;
+    if(prevBuff >= 1) {
+        prevBuff.next = nextBuff;
+    } else {  // prev가 없는 경우 == 첫번째 원소
+        firstBuff[target] = nextBuff;
+    }
+    if(nextBuff >= 1) {  // 둘 다 존재하는 경우
+        nextBuff.prev = prevBuff;
+    } else {  // 둘 다 없는 경우 == 유일한 원소
+        lastBuff[target] = prevBuff;  // next가 없는 경우 == 마지막 원소
+    }
+    buffArray[target * cType.buffN + buff.id] = 0;
+    buffEnd(target, buff);  // free
+}
+function removeBuffByID(target, id : cType.Skill) {
+    if(buffArray[target * cType.buffN + id] == 0) {
+        return;
+    }
+    removeBuff(target, buffArray[target * cType.buffN + id]);
+}
+function removeBuffAll(target) {
+    if(firstBuff[target] == 0) return;
+    var nextBuff = firstBuff[target];  // header
+    while(1) {
+        const buff = Buff.cast(nextBuff);
+        nextBuff = (buff.next >= 1) ? buff.next : 0;
+        removeBuff(buff);
+        if(nextBuff == 0) return;
+    }
+}
+function expireBuffByTurn(target) {
+    if(firstBuff[target] == 0) {
+        return;
+    }
+    var nextBuff = firstBuff[target];  // header
+    while(1) {
+        const buff = Buff.cast(nextBuff);
+        nextBuff = (buff.next >= 1) ? buff.next : 0;
+        if(buff.duration == -1) {
+            removeBuff(target, buff);
+        }
+        if(nextBuff == 0) {
+            return;
+        }
+    }
+}
+function newBuff(caster, target, id : cType.Skill) {
+    const buff = Buff.alloc();
+    buff.id = id;
+
+    EUDSwitch(id);
+    EUDSwitchCase()(cType.skill("방어"));
+        tB.Speed[caster] = 0;
+        buff.duration = -1;  //buff.expireType = cType.expire("차례"); 버프가 언제 만료할지는 duration으로 유추할 것!
+        const newDef = Defense.alloc();
+        newDef.dSpeedAdd = 100 + cs.AGI[caster] * 3;
+        newDef.rP = 50;  // 물리 저항
+        buff.defense = newDef;
+        ct.playSoundP(ct.cp, 'defend');
+        fx.DisplayR(ct.cp, ct.color(caster % 8), ct.str(cs.Names[caster]), "\x04", ct.str(cs.Josa_IGA[caster]), " \x1C방어 자세\x04를 취합니다.");
+        break;
+    EUDEndSwitch();
+    addBuff(target, buff);
+}

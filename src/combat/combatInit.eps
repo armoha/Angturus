@@ -1,0 +1,95 @@
+import combat.system as cs;
+import combat.action as cAct;
+import helpers.fx;
+import combat.monsterData;
+import combat.turnBar as tB;
+import bgmplayer as bgm;
+import customText3 as ct;
+
+var encounterCharEPD;
+const initiative = EUDArray(16);
+
+function initialize() {
+    cs.finishSelection();
+    var maxInitiative = 0;
+    for(var i = 0; i <= 15; i++) {
+        cAct.actionInit(i);
+        tB.SIndex[i] = i;
+        if(cs.PTRs[i] >= 1) {
+            cs.statInit(i);
+            if(i >= 5) { cs.SetHPFull(i); } else { cs.moveOpportunity[i] = 1; }
+            initiative[i] = (cs.WIT[i] + fx.Rand(cs.WIT[i])) * (cs.WIT[i] + fx.Rand(cs.WIT[i]));
+            if(maxInitiative < initiative[i]) { maxInitiative = initiative[i]; }
+        }
+    }
+    for(var i = 0; i <= 15; i++) {
+        if(cs.PTRs[i] >= 1) { tB.Speed[i] = 36000 * initiative[i] / maxInitiative; }
+    }
+    cs.setColor();
+    fx.cView("combatAlly");
+}
+function moveToCombatZone() {
+    for(var i = 0; i <= 4; i++) {
+        MoveUnit(1, cs.UnitIDs[i], Force1, "Anywhere", "combatAlly");
+    }
+}
+function searchMob() {
+    const mobList = $U("고양이"), $U("F.A.H");
+    const mobArray = EUDArray(mobList);
+    for(var i = 0; i < py_len(mobList); i++) {
+        if(Bring(P6, AtLeast, 1, mobArray[i], "encounter")) {
+            return mobArray[i];
+        }
+    }
+    return -1;
+}
+function createEnemy(mobType);
+function encounterCheck() {
+    for(var i = 0; i <= 4; i++) {
+        MoveLocation("encounter", cs.UnitIDs[i], Force1, "Anywhere");
+        if(Bring(P6, AtLeast, 1, "(men)", "encounter")
+            && Bring(Force1, AtLeast, 1, "(factories)", "encounter")) {
+            const mobType = searchMob();
+            if(mobType == -1) return 0;
+
+            GiveUnits(1, mobType, P6, "encounter", P12);
+            SetInvincibility(Enable, mobType, P12, "encounter");
+
+            encounterCharEPD = fx.getNextUnit()[[1]];
+            CreateUnit(1, cs.UnitIDs[i], "encounter", P8);
+            GiveUnits(1, cs.UnitIDs[i], P8, "encounter", P11);
+            fx.setUnitColor(encounterCharEPD, cs.Colors[i]);
+            dwadd_epd(encounterCharEPD + 0xDC/4, 0x04000000);  // 무적
+
+            CreateUnit(1, "Map Revealer", "encounter", Force1);
+
+            moveToCombatZone();
+            createEnemy(mobType);
+            initialize();
+            return 1;
+        }
+    }
+    return 0;
+}
+const Empty = EUDArray(7);
+function createEnemy(mobType) {
+    for(var i = 5; i <= 15; i++) {
+        cs.initChar(i);
+        initiative[i] = 0;
+    }
+    EUDSwitch(mobType);
+    EUDSwitchCase()($U("고양이"));
+        bgm.setBGM(bgm.bgmList.index("bgm4"));
+        for(var i = 8; i <= 11; i++) {
+            fx.SetEnemyName("고양이", cs.Names[i], cs.Josa_IGA[i], cs.Josa_EUN[i], cs.Josa_EUL[i], cs.Josa_URO[i]);
+
+            const ptr, epd = fx.getNextUnit();
+            cs.PTRs[i], cs.EPDs[i] = ptr, epd;
+            cs.UnitIDs[i] = $U("고양이");
+            CreateUnit(1, "고양이", "combatEnemy", P8);
+            cs.setStats(i, monsterData.getMobStats("고양이"));
+        }
+        EUDBreak();
+    EUDEndSwitch();
+    CreateUnit(1, "Map Revealer", "combatEnemy", Force1);
+}
