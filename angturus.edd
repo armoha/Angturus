@@ -1,0 +1,6 @@
+[main]
+input : src/AngYF.scx
+output: 앙튜러스.scx
+[src/main.py]
+[freeze]
+freeze: 0
