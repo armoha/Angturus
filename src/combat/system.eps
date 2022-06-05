@@ -1,5 +1,4 @@
-import customText3 as ct;
-import helpers.advrw;
+const sb = StringBuffer();
 import helpers.fx;
 import helpers.location as loc;
 import combat.turnBar as tb;
@@ -167,7 +166,7 @@ function setColor() {
         if(isExist(i)) {  // isExist() set curpl to CSprite(epd)
             setcurpl(epdread_cp(0) + 0x8/4);  // CSprite +0x8 (0xA is playerID)
             // remove previous color and add new color.
-            SetDeaths(CurrentPlayer, Subtract, advrw.dwread_cp_safe(0) & 0xFF0000, 0);
+            SetDeaths(CurrentPlayer, Subtract, dwread_cp(0) & 0xFF0000, 0);
             SetDeaths(CurrentPlayer, Add, Colors[i] * 0x10000, 0);
         }
     }
@@ -185,7 +184,7 @@ function init() {
     Names[2] = Db(u2utf8("\x04A\x0Fce\x1FRPG"));
     Names[3] = Db(u2utf8("\x10F\x1Eare."));
     Names[4] = Db(42);
-    ct.ct_print(Names[4], "\x11", ct.str(0x57EEEB + ct.cp * 36));
+    dbstr_print(Names[4], "\x11", epd2s(EPD(0x57EEEB) + getuserplayerid() * 9));
     const I, GA = Db(u2utf8("이")), Db(u2utf8("가"));
     Josa_IGA[0] = GA;
     Josa_IGA[1] = I;

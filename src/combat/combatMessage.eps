@@ -1,5 +1,5 @@
-import customText3 as ct;
-import scenes.base as sb;
+import customText4 as ct;
+import texteffect as te;
 import helpers.timeline as tL;
 import combat.cType;
 
@@ -25,7 +25,7 @@ function criticalHit(n) {
     const oldptr = getTextPtr();
     dwwrite_epd(EPD(0x640B58), n);
     foreach(txtPtr : py_range(11)) {
-        if(n == txtPtr && sb.fadeIn("\x13\x06크리티컬 \x08히트!!!", index=txtPtr)) {
+        if(n == txtPtr && te.fadein("\x13\x06크리티컬 \x08히트!!!", timer=txtPtr)) {
             contents[n] = 0;
         }
     }

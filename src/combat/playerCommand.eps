@@ -1,8 +1,7 @@
 import combat.system as cs;
 import combat.abilities as cA;
 import init;
-import helpers.advrw;
-import customText3 as ct;
+import customText4 as ct;
 import combat.buffManager as bM;
 import combat.AI_main;
 
@@ -26,7 +25,7 @@ function BQueueDetect(n) {  // detect buildQueue & set unit energy(FP)
     }
 }
 function OrderInit(n) {
-    advrw.bwrite_cp(0, 1, 1);  // [1]STOP
+    bwrite_cp(0, 1, 1);  // [1]STOP
     SetMemory(0x6509B0, Subtract, (0x4C-0x28)/4);
     const unitPos = dwread_cp(0);
     SetMemory(0x6509B0, Subtract, (0x28-0x10)/4);
@@ -34,7 +33,7 @@ function OrderInit(n) {
 }
 function OrderDetect(n) {
     const TargetingOrder = 115, 122, 121, 143, 113, 119, 144, 146, 142, 120, 145, 147, 180, 181, 185, 186;
-    const order = advrw.bread_cp(0, 1);
+    const order = bread_cp(0, 1);
     EUDSwitch(order);
     foreach(i, tOrder : py_enumerate(TargetingOrder)) {
         EUDSwitchCase()(tOrder);  // 타겟팅 스킬

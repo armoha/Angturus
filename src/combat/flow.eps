@@ -8,7 +8,7 @@ import combat.combatMessage as cMsg;
 import helpers.fx;
 import helpers.location as loc;
 import combat.combatInit;
-import customText3 as ct;
+import customText4 as ct;
 import combat.buffManager as bM;
 
 /*  전투 흐름 관리
@@ -70,6 +70,7 @@ function checkActionAndCasting() {
                 MoveUnit(All, "pathfinder", AllPlayers, "Anywhere", "cursor");
                 fx.cView("cursor");
             }
+            // 여기서 미지원 오류...
             fx.DisplayR(ct.cp, ct.color(i % 8), ct.str(cs.Names[i]), "\x04의 차례입니다.");
             tb.Speed[i] = 47652;
             cAct.issueWaitAll();

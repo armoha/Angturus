@@ -1,5 +1,5 @@
-import scenes.base as s_base;
-import customText3 as ct;
+import texteffect as te;
+import customText4 as ct;
 
 var Timer = 0;
 
@@ -9,61 +9,61 @@ function isEnd() {
 }
 
 function main() {
-    /*if(s_base.skip == 1 && Timer < 232) {
+    /*if(te.skip == 1 && Timer < 232) {
         Timer = 232;
     }*/
 
-    ct.reset_epd();
+    // ct.reset_epd();
 
     if(Timer == 50) {
         ct.playSound("sound\protoss\witness\pwipss00.WAV");
-        ct.reset_epd();
+        // ct.reset_epd();
     }
 
     if(Timer >= 50 && Timer <= 277) {
         ct.print_epd("\n\n ");
-        if(Timer == 50 || Timer == 277 - 8 * 3) s_base.initTimer(0);
+        if(Timer == 50 || Timer == 277 - 8 * 3) te.reset(0);
         if(Timer <= 277 - 8 * 3) {
-            s_base.fadeIn("\x13\x04앙튜러스", interval=3, index=0);
+            te.fadein("\x13\x04앙튜러스", interval=3, timer=0);
         } else {
-            s_base.fadeOut("\x13\x04앙튜러스", interval=3, index=0);
+            te.fadeout("\x13\x04앙튜러스", interval=3, timer=0);
         }
     } else if(Timer == 278) ct.print_epd("\n\n\n ");
 
     if(Timer >= 60 && Timer <= 271) {
-        if(Timer == 60 || Timer == 271 - 12 * 3) s_base.initTimer(1);
+        if(Timer == 60 || Timer == 271 - 12 * 3) te.reset(1);
         if(Timer <= 271 - 12 * 3) {
-            s_base.fadeIn("\x13\x11ANGTURUS", interval=3, index=1);
+            te.fadein("\x13\x11ANGTURUS", interval=3, timer=1);
         } else {
-            s_base.fadeOut("\x13\x11ANGTURUS", interval=3, index=1);
+            te.fadeout("\x13\x11ANGTURUS", interval=3, timer=1);
         }
     } else if(Timer == 272) ct.print_epd(" ");
 
     if(Timer >= 81 && Timer <= 255) {
         ct.print_epd(" ");
-        if(Timer == 81 || Timer == 255 - 23 * 2) s_base.initTimer(2);
+        if(Timer == 81 || Timer == 255 - 23 * 2) te.reset(2);
         if(Timer <= 255 - 23 * 2) {
-            s_base.fadeIn("\x13\x17프로젝트 \x16세레스 \x1CArtanis 제작", interval=3, index=2);
+            te.fadein("\x13\x17프로젝트 \x16세레스 \x1CArtanis 제작", interval=3, timer=2);
         } else {
-            s_base.fadeOut("\x13\x17프로젝트 \x16세레스 \x1CArtanis 제작", interval=2, index=2);
+            te.fadeout("\x13\x17프로젝트 \x16세레스 \x1CArtanis 제작", interval=2, timer=2);
         }
     } else if(Timer == 256) ct.print_epd(" \n ");
 
     if(Timer >= 90 && Timer <= 246) {
-        if(Timer == 90 || Timer == 246 - 23 * 1) s_base.initTimer(3);
+        if(Timer == 90 || Timer == 246 - 23 * 1) te.reset(3);
         if(Timer <= 246 - 23 * 1) {
-            s_base.fadeIn("\x13\x17Project \x16Ceres \x1CPresents", interval=2, index=3);
+            te.fadein("\x13\x17Project \x16Ceres \x1CPresents", interval=2, timer=3);
         } else {
-            s_base.fadeOut("\x13\x17Project \x16Ceres \x1CPresents", interval=1, index=3);
+            te.fadeout("\x13\x17Project \x16Ceres \x1CPresents", interval=1, timer=3);
         }
     } else if(Timer == 247) ct.print_epd(" ");
     
     if(Timer >= 104 && Timer <= 231) {
-        if(Timer == 104 || Timer == 231 - 28 * 2) s_base.initTimer(4);
+        if(Timer == 104 || Timer == 231 - 28 * 2) te.reset(4);
         if(Timer <= 231 - 28 * 2) {
-            s_base.fadeIn("\x13\x0FSpecial thanks to \x19", ct.str(0x57EEEB + 36 * ct.cp), interval=2, index=4);
+            te.fadein("\x13\x0FSpecial thanks to \x19", ct.str(0x57EEEB + 36 * ct.cp), interval=2, timer=4);
         } else {
-            s_base.fadeOut("\x13\x0FSpecial thanks to \x19", ct.str(0x57EEEB + 36 * ct.cp), interval=2, index=4);
+            te.fadeout("\x13\x0FSpecial thanks to \x19", ct.str(0x57EEEB + 36 * ct.cp), interval=2, timer=4);
         }
     } else if(Timer == 232) ct.print_epd(" ");
 

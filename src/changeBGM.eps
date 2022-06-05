@@ -1,15 +1,15 @@
 import bgmplayer as bgm;
 import combat.flow as cf;
 import scenes.talkVariables as tV;
-import customText3 as ct;
-import scenes.base as sBase;
+import customText4 as ct;
+import texteffect as te;
 import helpers.timeline as tL;
 
 var place;
 function changePlace(x) {
-    sBase.initTimer(13);
-    sBase.initTimer(14);
-    sBase.initTimer(15);
+    te.reset(13);
+    te.reset(14);
+    te.reset(15);
     place = x;
 }
 function screenover(x1, x2, y1, y2) {
@@ -63,15 +63,15 @@ function displayPlaceName() {
         foreach(t : tL.Timeless(123, index=15)) {
             if(t <= 30) DisplayText("\n ");
             else if(t <= 120) {
-                sBase.fadeIn("\x13\x11Emberstar \x04Village", interval=3, index=13);
-                sBase.fadeIn("\x13\x11잔불별 \x04마을", interval=3, index=14);
+                te.fadein("\x13\x11Emberstar \x04Village", interval=3, timer=13);
+                te.fadein("\x13\x11잔불별 \x04마을", interval=3, timer=14);
             } else {
                 if(t == 121) {
-                    sBase.initTimer(13);
-                    sBase.initTimer(14);
+                    te.reset(13);
+                    te.reset(14);
                 }
-                sBase.fadeOut("\x13\x11Emberstar \x04Village", interval=3, index=13);
-                sBase.fadeOut("\x13\x11잔불별 \x04마을", interval=3, index=14);
+                te.fadeout("\x13\x11Emberstar \x04Village", interval=3, timer=13);
+                te.fadeout("\x13\x11잔불별 \x04마을", interval=3, timer=14);
             }
         }
         break;
@@ -79,15 +79,15 @@ function displayPlaceName() {
         foreach(t : tL.Timeless(123, index=15)) {
             if(t <= 30) DisplayText("\n ");
             else if(t <= 120) {
-                sBase.fadeIn("\x13\x1CTere\x04binthia", interval=3, index=13);
-                sBase.fadeIn("\x13\x1C테레\x04빈시아", interval=3, index=14);
+                te.fadein("\x13\x1CTere\x04binthia", interval=3, timer=13);
+                te.fadein("\x13\x1C테레\x04빈시아", interval=3, timer=14);
             } else {
                 if(t == 121) {
-                    sBase.initTimer(13);
-                    sBase.initTimer(14);
+                    te.reset(13);
+                    te.reset(14);
                 }
-                sBase.fadeOut("\x13\x1CTere\x04binthia", interval=3, index=13);
-                sBase.fadeOut("\x13\x1C테레\x04빈시아", interval=3, index=14);
+                te.fadeout("\x13\x1CTere\x04binthia", interval=3, timer=13);
+                te.fadeout("\x13\x1C테레\x04빈시아", interval=3, timer=14);
             }
         }
         break;

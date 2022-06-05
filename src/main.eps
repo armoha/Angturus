@@ -12,6 +12,7 @@ import soundEffects;
 function onPluginStart() {
     soundEffects.load();
     init.init();
+    // GetStringIndex("Y");
 }
 function beforeTriggerExec() {
     init.pCheck();
@@ -25,6 +26,5 @@ function afterTriggerExec() {
     bgm.checkbgm();
     cf.main();
     tM.main();
-    SetMemory(0x6556E4, SetTo, -1);  // 반응속도 개선
     SetMemory(0x6509A0, SetTo, 0);  // EUD 터보
 }

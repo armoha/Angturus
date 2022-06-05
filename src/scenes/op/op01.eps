@@ -1,5 +1,5 @@
-import scenes.base as s_base;
-import customText3 as ct;
+import texteffect as te;
+import customText4 as ct;
 import scenes.talkVariables as tV;
 import scenes.speakers;
 import helpers.timeline as tL;
@@ -12,6 +12,7 @@ import etc.lightOn;
 var goddessEffectOn;
 
 function main() {
+    const cl = 0x05, 0x14;
     EUDSwitch(tV.sceneNumber);
     EUDSwitchCase()(0);
         SetVariables(tV.sceneNumber, 6);  // TEST TEST!
@@ -20,15 +21,15 @@ function main() {
                 tV.Cutscene();
             } else if(t <= 180) {
                 tV.TalkState(0);
-                if(s_base.talk("\x13\x04눈을 뜨니 풍경이 낯설지만 왠지 마음이 놓인다.", index=1)) {
-                    if(s_base.talk("\x13\x04날은 따뜻하지만 시원한 바닷바람이 분다.", index=2)) {
-                        tV.TalkFinish(s_base.talk("\x13\x04밀려오는 파도 소리와 갈매기 울음소리에 마음이 평화롭다.", index=3));
+                if(te.fadein("\x13\x04눈을 뜨니 풍경이 낯설지만 왠지 마음이 놓인다.", color=cl, timer=1)) {
+                    if(te.fadein("\x13\x04날은 따뜻하지만 시원한 바닷바람이 분다.", color=cl, timer=2)) {
+                        tV.TalkFinish(te.fadein("\x13\x04밀려오는 파도 소리와 갈매기 울음소리에 마음이 평화롭다.", color=cl, timer=3));
                     } DisplayText(" ");
                 } else DisplayText("\n ");
             } else {
                 tV.TalkFinish(1);
-                ct.print("\x13\x04눈을 뜨니 풍경이 낯설지만 왠지 마음이 놓인다.\n\x13\x04날은 따뜻하지만 시원한 바닷바람이 분다.\n\x13\x04밀려오는 파도 소리와 갈매기 울음소리에 마음이 평화롭다.");
-                ct.print("\x13\x07* \x04다음 대화\x17로 넘기려면 \x1FF 키 \x17또는 \x1F화면의 '다음' 버튼\x17을 누르세요. 자동 넘기기는 \x1B스킵!\x17입니다.");
+                DisplayText("\x13\x04눈을 뜨니 풍경이 낯설지만 왠지 마음이 놓인다.\n\x13\x04날은 따뜻하지만 시원한 바닷바람이 분다.\n\x13\x04밀려오는 파도 소리와 갈매기 울음소리에 마음이 평화롭다.");
+                DisplayText("\x13\x07* \x04다음 대화\x17로 넘기려면 \x1FF 키 \x17또는 \x1F화면의 '다음' 버튼\x17을 누르세요. 자동 넘기기는 \x1B스킵!\x17입니다.");
             }
         }
         break;
@@ -38,13 +39,13 @@ function main() {
                 DisplayText("\n\n\n ");
             } else if(t <= 60) {
                 speakers.talk("YOU2");
-                tV.TalkFinish(s_base.talk("\x13\x04여긴 어디, 난 누구?", index=1));
+                tV.TalkFinish(te.fadein("\x13\x04여긴 어디, 난 누구?", color=cl, timer=1));
                 DisplayText(" ");
             } else {
                 tV.TalkFinish(1);
                 speakers.talk("YOU2");
                 ct.print("\x13\x04여긴 어디, 난 누구?");
-                ct.print("\x13\x07* \x04다음 대화\x17로 넘기려면 \x1FF 키 \x17또는 \x1F화면의 '다음' 버튼\x17을 누르세요. 자동 넘기기는 \x1B스킵!\x17입니다.");
+                DisplayText("\x13\x07* \x04다음 대화\x17로 넘기려면 \x1FF 키 \x17또는 \x1F화면의 '다음' 버튼\x17을 누르세요. 자동 넘기기는 \x1B스킵!\x17입니다.");
             }
         }
         break;
@@ -80,27 +81,27 @@ function main() {
                 tV.TalkState(0);
                 goddessEffectOn = 1;
                 speakers.talk("goddess");
-                tV.TalkFinish(s_base.talk("\x13\x07", ct.str(0x57EEEB + 36 * ct.cp), "\x04씨 들리나요?...", index=1));
+                tV.TalkFinish(te.fadein("\x13\x07", ct.str(0x57EEEB + 36 * ct.cp), "\x04씨 들리나요?...", color=cl, timer=1));
                 DisplayText(" ");
             }
         }
         break;
     EUDSwitchCase()(3);
         speakers.talk("goddess");
-        if(s_base.talk("\x13\x04아... 제 말이 들리고 있군요...", interval=2)) {
-            tV.TalkFinish(s_base.talk("\x13\x04힘든 부탁이지만... 이쪽 세상으로 와주세요.", interval=2, index=1));
+        if(te.fadein("\x13\x04아... 제 말이 들리고 있군요...", color=cl, timer=2)) {
+            tV.TalkFinish(te.fadein("\x13\x04힘든 부탁이지만... 이쪽 세상으로 와주세요.", color=cl, interval=2, timer=1));
         } else DisplayText(" ");
         break;
     EUDSwitchCase()(4);
         speakers.talk("goddess");
-        if(s_base.talk("\x13\x04악의 세력이 점차 거세지고 있어요.", interval=3)) {
+        if(te.fadein("\x13\x04악의 세력이 점차 거세지고 있어요.", color=cl, timer=3)) {
             foreach(t : tL.Timeless(72, index=1)) {
                 if(t <= 70) {
                     tV.Cutscene();
                     tV.TalkStart(0);
                     DisplayText(" ");
                 } else {
-                    tV.TalkFinish(s_base.talk("\x13\x07희망의 성지\x04가 파괴된 건 시작일 뿐이에요...", interval=2, index=2));
+                    tV.TalkFinish(te.fadein("\x13\x07희망의 성지\x04가 파괴된 건 시작일 뿐이에요...", interval=2, color=cl, timer=2));
                 }
             }
         } else DisplayText(" ");
@@ -132,8 +133,8 @@ function main() {
         break;
     EUDSwitchCase()(5);
         speakers.talk("goddess");
-        if(s_base.talk("\x13\x04동료를 모아 다가오는 위협에서 구해주세요...")) {
-            tV.TalkFinish(s_base.talk("\x13\x04허수아비가 \x07뇌\x04를, 양철나무꾼이 \x07심장\x04을, 사자가 \x07용기\x04를 찾게 도와주세요.", index=1));
+        if(te.fadein("\x13\x04동료를 모아 다가오는 위협에서 구해주세요...", color=cl, timer=2)) {
+            tV.TalkFinish(te.fadein("\x13\x04허수아비가 \x07뇌\x04를, 양철나무꾼이 \x07심장\x04을, 사자가 \x07용기\x04를 찾게 도와주세요.", color=cl, timer=1));
         } else DisplayText(" ");
         break;
     EUDSwitchCase()(6);

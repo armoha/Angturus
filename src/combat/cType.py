@@ -3,7 +3,7 @@ from eudplib.core.eudfunc.consttype import createEncoder
 from eudplib.core.rawtrigger.strenc import _EncodeAny
 import helpers.fx
 import re
-import customText3 as ct
+import customText4 as ct
 
 actionDict = [
     "(None)", "이동", "공격", "도주",

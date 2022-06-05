@@ -1,6 +1,6 @@
 import combat.system as cs;
 import helpers.fx;
-import customText3 as ct;
+import customText4 as ct;
 import combat.combatMessage as cMsg;
 import combat.cType;
 
@@ -140,6 +140,6 @@ function inflictDamage(src, target, amount, dmgType, attackType, id: cType.Skill
             ct.addText("\x1B저항했다.");
         }
     }
-    ct.displayText(ct.cp);
+    ct.displayTextP(ct.cp);
     cs.updateHP(target);
 }

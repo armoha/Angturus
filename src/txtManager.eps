@@ -1,7 +1,7 @@
 import combat.turnBar as tB;
 import combat.flow as cf;
-import customText3 as ct;
-import scenes.base as sBase;
+import customText4 as ct;
+import texteffect as te;
 import scenes.intro as sIntro;
 import helpers.timeline as tL;
 import helpers.fx;
@@ -25,7 +25,7 @@ function resetTalking() {
         pressNext[i] = 0;
     }
     foreach(i : py_range(13)) {
-        sBase.initTimer(i);
+        te.reset(i);
     }
     tV.TalkSound(0);
     tV.TalkState(0);
@@ -49,7 +49,7 @@ function main() {
     txtPtr = dwread_epd(EPD(0x640B58));
 
     SetCurrentPlayer(ct.cp);
-    ct.reset_epd();
+    // ct.reset_epd();
 
     if(cf.combatDisplay) {  // 전투 중 = 턴바 출력
         tB.printCombatString();
@@ -72,7 +72,7 @@ function main() {
 
         if(tV.isTalkFinished && tV.talkState == 0) {
             if(pressNext[ct.cp]) {  // 내가 next 눌렀나
-                sBase.rainbow("\x13\x04\x13다른 플레이어를 기다립니다", interval=2);
+                te.fadein("\x13\x04\x13다른 플레이어를 기다립니다", interval=2);
             } else {
                 foreach(t : tL.Timeline(26)) {
                     if(t <= 14) {

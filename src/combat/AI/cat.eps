@@ -3,7 +3,7 @@ import combat.action as cAct;
 import combat.AI.base;
 import combat.buffManager as bM;
 import helpers.fx;
-import customText3 as ct;
+import customText4 as ct;
 
 function getAttackingPlayer() {
     for(var p = 0; p <= 4; p++) {
@@ -16,15 +16,15 @@ function getAttackingPlayer() {
 }
 function scoring() {
     for(var p = 0; p <= 7; p++) {
-        fx.SetKills(p, SetTo, 0, "pathfinder");
+        SetKills(p, SetTo, 0, "pathfinder");
         if(p <= 4 && cs.PTRs[p] >= 1) {
-            fx.SetKills(p, SetTo, 0x3FFFFFFF, "pathfinder");
-            fx.SetKills(p, Add, -cs.rP[p], "pathfinder");  // 물리저항만큼 -점수
-            fx.SetKills(p, Add, fx.Rand(30), "pathfinder");
+            SetKills(p, SetTo, 0x3FFFFFFF, "pathfinder");
+            SetKills(p, Add, -cs.rP[p], "pathfinder");  // 물리저항만큼 -점수
+            SetKills(p, Add, fx.Rand(30), "pathfinder");
         }
     }
     // 가장 가까우면 +25점
-    fx.SetKills(base.getNearbyP(cs.selectingAction)[[0]], Add, 25, "pathfinder");
+    SetKills(base.getNearbyP(cs.selectingAction)[[0]], Add, 25, "pathfinder");
     return fx.getMostKills("pathfinder");
 }
 function main() {

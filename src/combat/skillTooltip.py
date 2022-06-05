@@ -1,5 +1,5 @@
 from eudplib import *
-import customText3 as ct
+import customText4 as ct
 
 '''
 버튼셋
